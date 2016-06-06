@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use DB;
 use App\Http\Requests;
 use App\QR\BarcodeQR;
+use App\QR\qrlib;
+use App\MailClass\PHPMailer;
+
 
 class DashboardServices extends Controller
 {
@@ -46,6 +49,23 @@ class DashboardServices extends Controller
 
 
     public function CompanyPayment(Request $request){
+
+
+    	$payment_method = $request->input("");
+    	$cheque_no      = $request->input("");
+    	$bank           = $request->input("");
+    	$branch         = $request->input("");
+    	$amount         = (float)$request->input("");
+    	$company_id     = $request->input("");
+    	$count 			= (int)$request->input("");
+
+    	$IndividualAmonut = $amount/$count;
+
+
+    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(payment_role_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$company_id','$payment_method','company',$cheque_no,'$bank','$branch',$amount)")); 
+
+
+    	$res2 =   DB::statement(DB::raw("UPDATE participant SET attendance_status = 1 where participant_company = '$company_id'")); 
       	
     	
 
@@ -56,6 +76,20 @@ class DashboardServices extends Controller
       	
     	
 
+    	$payment_method = $request->input("");
+    	$cheque_no      = $request->input("");
+    	$bank           = $request->input("");
+    	$branch         = $request->input("");
+    	$amount         = $request->input("");
+    	$participant_id = $request->input("");
+
+    
+    
+
+    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(payment_role_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)")); 
+
+
+    	$res2 =   DB::statement(DB::raw("UPDATE participant SET attendance_status = 1 where participant_company = '$company_id'")); 
 
     }
 
@@ -91,25 +125,55 @@ class DashboardServices extends Controller
 
     	/*$res =   DB::statement(DB::raw("INSERT INTO payments(payment_method,cheque_no,bank,branch,amount) values('$payment_method',$cheque_no,'$bank','$branch',$amount)")); */
 
-    	 $PNG_TEMP_DIR = "C:\/xampp\htdocs\IPMwebServices\/QRpng/";
+    	 $PNG_TEMP_DIR = "C:\/xampp\htdocs\IPMwebServices\public\QRpng\/";
 
     	   $filename = $PNG_TEMP_DIR.'test.png';
 
-    	   $errorCorrectionLevel = 'L';
-    	   $matrixPointSize = 4;
+    
 
-    	   echo $PNG_TEMP_DIR;
+    	   $qr = new BarcodeQR();
+
+    	
+		  $qr->text("IPM test data"); 
+
+		  $qr->draw(200, $filename);
+
+		  echo '<img src="'.$filename.'" /><hr/>'; 
 
 
 
-    	   $BarcodeQR = new BarcodeQR();
 
+$mailer_fogot = new PHPMailer();
+$mailer_fogot->IsSMTP();          // set mailer to use SMTP
+$mailer_fogot->Host = "smtp.hnbassurance.com";  // specify main and backup server
+$mailer_fogot->SMTPAuth = true;     // turn on SMTP authentication
+$mailer_fogot->Username = "misreports";  // SMTP username
+$mailer_fogot->Password = "Water@1234"; // SMTP password
 
-    	   $BarcodeQR->
+$mailer_fogot->From = "ipm@gmail.com";
+$mailer_fogot->FromName = "Payment details";
+		
+
     	 
+$mailer_fogot->AddAddress("achala.dias@hnbassurance.com");
 
+$msgBody = "<img src='".$filename."' /><hr/>";
+$mail_body_fog=$msgBody;
 
+$mailer_fogot->Subject = "ipm payment details";
+$mailer_fogot->Body=$msgBody;
+$mailer_fogot->AltBody = "";
 
+if(!$mailer_fogot->Send())
+{
+   echo "Message could not be sent. <p>";
+   echo "Mailer Error: " . $mailer_fogot->ErrorInfo;
+   exit;
+}else{
+
+echo "Sucess!!";
+
+}
   
 
     }
