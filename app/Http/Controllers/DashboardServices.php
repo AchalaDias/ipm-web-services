@@ -153,8 +153,8 @@ class DashboardServices extends Controller
      public function IndividualList(Request $request){
  
 
-     $individual = DB::select("select a.* ,
-     	(select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name
+     $individual = DB::select("select a.*,
+     	(select (select  b.packagers_name from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_name
      	from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
 
       $company = $this->CompanyList($request);
@@ -268,6 +268,6 @@ echo "Sucess!!";
     }
 
 
- 
+
 
 }
