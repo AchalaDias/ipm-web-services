@@ -155,7 +155,11 @@ class DashboardServices extends Controller
 
      $individual = DB::select("select a.*,
      	(select (select  b.packagers_name from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_name
-     	from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
+,(select company_paymant_status from company where company_id  = a.participant_company) as payment_status,
+	(select (select  b.packagers_description from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_description,
+	(select (select  b.description_amount from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as amount_disply
+from participant a
+ where a.participant_company in (select company_id from company where company_com_indiv = 0 )");
 
       $company = $this->CompanyList($request);
 
