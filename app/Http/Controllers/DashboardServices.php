@@ -16,10 +16,11 @@ class DashboardServices extends Controller
     public function registrationAndPayments(Request $request){
 
 
-   	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.				    company_packagers) as 'name' ,
-			  	 count(a.company_packagers)
+   	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
+			  	
+		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id ))
 				as 'registered',
-			    (select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers)
+			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )   
        			as 'paid'
 				from  company a
 				group by a.company_packagers");
@@ -40,6 +41,18 @@ class DashboardServices extends Controller
     public function registrationVsAttendance(Request $request){
 
 
+	 	$result = DB::select("  	select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
+			  	
+		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id and attendance_status = 1))
+				as 'registered',
+			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )   
+       			as 'attendance'
+				from  company a
+				group by a.company_packagers");
+
+
+		return response()->json(['data' =>   $result]);
+  
 
 
     }
@@ -114,6 +127,17 @@ class DashboardServices extends Controller
 
     }
 
+    public function IndividualsFromCompany(Request $rquest){
+
+    	$company_id = $rquest->input("companyId");
+
+    	$result = DB::select("select * from participant where participant_company = '$company_id'");
+
+    	return response()->json(['data' => $result]);
+
+
+    }
+
      public function CompanyList(Request $request){
 
     	$result = DB::select("select * from company a where a.company_com_indiv =0 ");
@@ -123,7 +147,7 @@ class DashboardServices extends Controller
 
     }
 
-       public function IndividualList(Request $request){
+     public function IndividualList(Request $request){
 
     	$individual = DB::select("select * from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
       $company = $this->CompanyList($request);
