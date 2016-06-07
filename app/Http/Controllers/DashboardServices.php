@@ -231,7 +231,7 @@ echo "Sucess!!";
      public function saveAgenda(Request $request){
 
 
-     	$re
+     	
 
 
     }
@@ -256,5 +256,18 @@ echo "Sucess!!";
 
 
     }
+
+
+    public function ratingAmount(Request $request){
+
+    	$result = DB::select("select a.*,sum(a.rate_amonut),count(a.participant_id) from speakerRating a group by a.speaker_id");
+
+    	return response()->json(['data' => $result]);
+
+
+    }
+
+
+ 
 
 }
