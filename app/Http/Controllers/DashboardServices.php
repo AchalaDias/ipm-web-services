@@ -79,7 +79,7 @@ class DashboardServices extends Controller
 
     	$id = $v->participant_id;
 
-    	$res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company',$cheque_no,'$bank','$branch',$IndividualAmonut)"));
+    	$res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company','$cheque_no','$bank','$branch','$IndividualAmonut')"));
 
 		}
 
@@ -109,7 +109,7 @@ class DashboardServices extends Controller
     	$company_id     = $request->input("company_id");
 
 
-    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)"));
+    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv','$cheque_no','$bank','$branch','$amount')"));
 
 
     	$res2 =   DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'"));
