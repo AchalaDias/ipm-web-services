@@ -83,7 +83,7 @@ class DashboardServices extends Controller
 
 		}
 
-    	$res2 = DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'"));
+    	$res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
 
     	if($res2){
     		 return response()->json(['message' => 'success' ]);
@@ -112,7 +112,7 @@ class DashboardServices extends Controller
     	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv','$cheque_no','$bank','$branch','$amount')"));
 
 
-    	$res2 =   DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'"));
+    	$res2 =   DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
 
 
     	if($res1 == true || $res2 == true){
