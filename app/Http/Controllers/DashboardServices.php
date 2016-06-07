@@ -40,9 +40,9 @@ class DashboardServices extends Controller
 
     }
 
-      public function registrationVsAttendance(Request $request){
+    public function registrationVsAttendance(Request $request){
 
-    	
+    		
 
 
     }

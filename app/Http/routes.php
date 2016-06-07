@@ -19,3 +19,7 @@ Route::get('/', function () {
 Route::get('targetVsAchievment','DashboardServices@targetVsAchievment');
 Route::get('registrationAndPayments','DashboardServices@registrationAndPayments');
 Route::get('PaymentProcess','DashboardServices@PaymentProcess');
+Route::get('IndividualPayment','DashboardServices@IndividualPayment');
+Route::get('CompanyPayment','DashboardServices@CompanyPayment');
+Route::get('CompanyList','DashboardServices@CompanyList');
+Route::get('IndividualList','DashboardServices@IndividualList');
