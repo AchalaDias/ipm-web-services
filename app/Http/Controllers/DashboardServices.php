@@ -25,9 +25,6 @@ class DashboardServices extends Controller
 				group by a.company_packagers");
 
 
-   // $jsonArray = json_encode($PaymentDetails);
-
-
      return response()->json(['data' =>   $PaymentDetails]);
 
     }
@@ -129,6 +126,8 @@ class DashboardServices extends Controller
        public function IndividualList(Request $request){
       	
     	$result = DB::select("select * from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
+
+    
        
 
         return response()->json(['data' =>   $result]);
