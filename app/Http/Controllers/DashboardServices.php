@@ -142,7 +142,9 @@ class DashboardServices extends Controller
 
     	$result = DB::select("select a.*,
       (select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name,
-      (select count(*) from  participant b where b.participant_company = a.company_id) as user_count
+      (select count(*) from  participant b where b.participant_company = a.company_id) as user_count,
+       (select  b.packagers_description from packagers b where b.packagers_id = a.company_packagers) as packagers_description,
+		(select  b.description_amount from packagers b where b.packagers_id = a.company_packagers) as description_amount
        from company a where a.company_com_indiv =0 ");
 
 
@@ -242,13 +244,38 @@ echo "Sucess!!";
 
      public function addSpeakers(Request $request){
 
-     	$name        = $request->input("speakerId");
+     	$name        = $request->input("speakerName");
      	$description = $request->input("speakerDescription");
      	$image_path  = $request->input("speakerImage");
      	$country     = $request->input("speakerCountry");
 
 
      	$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));
+
+
+     	if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
+
+
+    }
+
+      public function UpdateSpeakers(Request $request){
+
+      	$id          = $request->input("speakerId");
+     	$name        = $request->input("speakerName");
+     	$description = $request->input("speakerDescription");
+     	$image_path  = $request->input("speakerImage");
+     	$country     = $request->input("speakerCountry");
+
+
+     	/*$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));*/
+
+     	$res1 = DB::statement(DB::raw("UPDATE speakers set speaker_description = '$description',speaker_name = '$name',speaker_datetime = now(),
+     		speaker_country = '$country' where speaker_id = '$id'"));
 
 
      	if($res1){

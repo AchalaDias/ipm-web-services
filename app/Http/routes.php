@@ -26,6 +26,7 @@ Route::get('IndividualsFromCompany','DashboardServices@IndividualsFromCompany');
 Route::get('registrationVsAttendance','DashboardServices@registrationVsAttendance');
 Route::get('IndividualsFromCompany','DashboardServices@IndividualsFromCompany');
 Route::get('addSpeakers','DashboardServices@addSpeakers');
+Route::get('UpdateSpeakers','DashboardServices@UpdateSpeakers');
 Route::get('ratingAmount','DashboardServices@ratingAmount');
 
 
