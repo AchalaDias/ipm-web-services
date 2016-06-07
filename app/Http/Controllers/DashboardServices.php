@@ -140,16 +140,23 @@ class DashboardServices extends Controller
 
      public function CompanyList(Request $request){
 
-    	$result = DB::select("select * from company a where a.company_com_indiv =0 ");
+    	$result = DB::select("select a.*,
+      (select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name,
+      (select count(*) from  participant b where b.participant_company = a.company_id) as user_count
+       from company a where a.company_com_indiv =0 ");
 
 
         return $result;
 
     }
-
+ 
      public function IndividualList(Request $request){
+ 
 
-    	$individual = DB::select("select * from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
+     $individual = DB::select("select a.* ,
+     	(select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name
+     	from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
+     
       $company = $this->CompanyList($request);
 
       return response()->json(['individual' =>   $individual, 'comapany' => $company]);
