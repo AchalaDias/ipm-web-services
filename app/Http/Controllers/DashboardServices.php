@@ -51,24 +51,38 @@ class DashboardServices extends Controller
     public function CompanyPayment(Request $request){
 
 
-    	$payment_method = $request->input("");
-    	$cheque_no      = $request->input("");
-    	$bank           = $request->input("");
-    	$branch         = $request->input("");
-    	$amount         = (float)$request->input("");
-    	$company_id     = $request->input("");
-    	$count 			= (int)$request->input("");
+    	$payment_method = $request->input("payment_method");
+    	$cheque_no      = $request->input("cheque_no");
+    	$bank           = $request->input("bank");
+    	$branch         = $request->input("branch");
+    	$amount         = (float)$request->input("amount");
+    	$company_id     = $request->input("company_id");
+    	$count 			= (int)$request->input("count");
 
-    	$IndividualAmonut = $amount/$count;
-
-
-    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(payment_role_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$company_id','$payment_method','company',$cheque_no,'$bank','$branch',$amount)")); 
+    	$IndividualAmonut = (float)($amount/$count);
 
 
-    	$res2 =   DB::statement(DB::raw("UPDATE participant SET attendance_status = 1 where participant_company = '$company_id'")); 
-      	
-    	
+    	$Pids = DB::select("select participant_id from participant where participant_company = '$company_id'");
 
+
+    	foreach ($Pids as $v) {
+    
+    	$id = $v->participant_id;
+
+    	$res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company',$cheque_no,'$bank','$branch',$IndividualAmonut)")); 
+
+		}
+
+    	$res2 = DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'"));
+
+    	if($res2){
+    		 return response()->json(['message' => 'success' ]);
+    	}
+    	else{
+
+    		 return response()->json(['message' => 'fail' ]);
+
+    	}
 
     }
 
@@ -76,21 +90,31 @@ class DashboardServices extends Controller
       	
     	
 
-    	$payment_method = $request->input("");
-    	$cheque_no      = $request->input("");
-    	$bank           = $request->input("");
-    	$branch         = $request->input("");
-    	$amount         = $request->input("");
-    	$participant_id = $request->input("");
-
-    
-    
-
-    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(payment_role_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)")); 
+    	$payment_method = $request->input("payment_method");
+    	$cheque_no      = $request->input("cheque_no");
+    	$bank           = $request->input("bank");
+    	$branch         = $request->input("branch");
+    	$amount         = $request->input("amount");
+    	$participant_id = $request->input("participant_id");
+    	$company_id     = $request->input("company_id");
 
 
-    	$res2 =   DB::statement(DB::raw("UPDATE participant SET attendance_status = 1 where participant_company = '$company_id'")); 
+    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)")); 
 
+
+    	$res2 =   DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'")); 
+
+
+    	if($res1 == true || $res2 == true){
+
+    		 return response()->json(['message' => "success"]);
+    	}
+    	else{
+
+    		 return response()->json(['message' => "fail"]);
+    	}
+
+         
     }
 
      public function CompanyList(Request $request){
