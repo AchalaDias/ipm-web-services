@@ -156,7 +156,7 @@ class DashboardServices extends Controller
      $individual = DB::select("select a.* ,
      	(select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name
      	from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
-     
+
       $company = $this->CompanyList($request);
 
       return response()->json(['individual' =>   $individual, 'comapany' => $company]);
@@ -227,4 +227,34 @@ echo "Sucess!!";
 
 
     }
+
+     public function saveAgenda(Request $request){
+
+
+     	$re
+
+
+    }
+
+     public function addSpeakers(Request $request){
+
+     	$name        = $request->input("speakerId");
+     	$description = $request->input("speakerDescription");
+     	$image_path  = $request->input("speakerImage");
+     	$country     = $request->input("speakerCountry");
+
+
+     	$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));
+
+
+     	if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
+
+
+    }
+
 }
