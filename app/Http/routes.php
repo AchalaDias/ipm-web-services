@@ -29,8 +29,19 @@ Route::get('IndividualsFromCompany','DashboardServices@IndividualsFromCompany');
 Route::get('addSpeakers','DashboardServices@addSpeakers');
 Route::get('UpdateSpeakers','DashboardServices@UpdateSpeakers');
 Route::get('deleteSpeaker','DashboardServices@deleteSpeaker');
+Route::get('showAllSpeakers','DashboardServices@showAllSpeakers');//return all speakers details 
+Route::get('showSpeakerDetailsById','DashboardServices@showSpeakerDetailsById');//return only one speaker's details 
+
+
+
+Route::get('showAgenda','DashboardServices@showAgenda');
+Route::get('saveAgenda','DashboardServices@saveAgenda');
+Route::get('updateAgenda','DashboardServices@updateAgenda');
+Route::get('deleteAgendaItemByID','DashboardServices@deleteAgendaItemByID');//delete one agenda item only
+Route::get('deleteAllAgendaItemsFromDate','DashboardServices@deleteAllAgendaItemsFromDate');//delete all agenda items using date
+
 
 Route::get('ratingAmount','DashboardServices@ratingAmount');
 
-
+Route::get('userLoginDetails','DashboardServices@userLoginDetails');//user login details
 

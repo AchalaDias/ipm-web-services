@@ -234,10 +234,89 @@ echo "Sucess!!";
 
     }
 
+
+    public function showAgenda(Request $request){
+
+    	$date = $request->input("agendaDate");
+
+    	$result = DB::select("select * from agenda where  item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')");
+
+
+    	return response()->json(['data' => $request]);
+    }
+
      public function saveAgenda(Request $request){
 
 
      	
+     	$name        = $request->input("itemName");
+     	$description = $request->input("itemDescription");
+     	$time        = $request->input("itemTime");
+     	$date        = $request->input("ItemDate");
+
+
+     	$res1 = DB::statement("insert into agenda(item_name,item_description,item_time,item_date)
+			values('$name','$description','$time',STR_TO_DATE('$date', '%d/%m/%Y %r'))
+			");
+
+
+		if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
+
+    }
+
+    public function updateAgenda(Request $request){
+
+    	$id 		 = $request->input("itemId");
+    	$name        = $request->input("itemName");
+     	$description = $request->input("itemDescription");
+     	$time        = $request->input("itemTime");
+     	$date        = $request->input("ItemDate");
+
+
+     	$res1 = DB::statement(DB::raw("UPDATE agenda set item_name = '$name',item_description = '$description',item_time = '$item_time',
+     		 item_date = STR_TO_DATE('$date', '%d/%m/%Y %r') where id = '$id'"));
+
+     	if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
+
+
+    }
+
+    public function deleteAgendaItemByID(Request $request){
+
+    	$id 		 = $request->input("itemId");
+    	$res1 = DB::statement(DB::raw("DELETE FROM agenda where id = '$id'"));
+
+    		if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
+
+
+    }
+
+     public function deleteAllAgendaItemsFromDate(Request $request){
+
+    	$date 		 = $request->input("date");
+    	$res1 = DB::statement(DB::raw("DELETE FROM agenda where item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')"));
+
+    		if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
 
 
     }
@@ -304,6 +383,22 @@ echo "Sucess!!";
 
     }
 
+    public function showAllSpeakers(Request $request){
+
+    	$result = DB::select("select * from speakers ");
+
+    	return response()->json(['data' => $result]);
+    }
+
+   public function showSpeakerDetailsById(Request $request){
+
+   	$id  = $request->input("speakerId");
+
+    	$result = DB::select("select * from speakers where speaker_id = '$id'");
+
+    	return response()->json(['data' => $result]);
+    }
+
 
     public function ratingAmount(Request $request){
 
@@ -311,6 +406,17 @@ echo "Sucess!!";
 
     	return response()->json(['data' => $result]);
 
+
+    }
+
+    public function userLoginDetails(Request $request){
+
+    	$username = $request->input("username");
+    	$password = $request->input("password");
+
+    	$result = DB::select("select * from user where user_username = '$username' and user_password = '$password'");
+
+    	return response()->json(['data' => $result]);
 
     }
 
