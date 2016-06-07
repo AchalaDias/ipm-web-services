@@ -12,14 +12,14 @@ use App\MailClass\PHPMailer;
 
 class DashboardServices extends Controller
 {
-    
+
     public function registrationAndPayments(Request $request){
 
 
    	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.				    company_packagers) as 'name' ,
 			  	 count(a.company_packagers)
 				as 'registered',
-			    (select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers)    
+			    (select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers)
        			as 'paid'
 				from  company a
 				group by a.company_packagers");
@@ -42,7 +42,7 @@ class DashboardServices extends Controller
 
     public function registrationVsAttendance(Request $request){
 
-    		
+
 
 
     }
@@ -66,10 +66,10 @@ class DashboardServices extends Controller
 
 
     	foreach ($Pids as $v) {
-    
+
     	$id = $v->participant_id;
 
-    	$res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company',$cheque_no,'$bank','$branch',$IndividualAmonut)")); 
+    	$res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company',$cheque_no,'$bank','$branch',$IndividualAmonut)"));
 
 		}
 
@@ -87,8 +87,8 @@ class DashboardServices extends Controller
     }
 
     public function IndividualPayment(Request $request){
-      	
-    	
+
+
 
     	$payment_method = $request->input("payment_method");
     	$cheque_no      = $request->input("cheque_no");
@@ -99,10 +99,10 @@ class DashboardServices extends Controller
     	$company_id     = $request->input("company_id");
 
 
-    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)")); 
+    	$res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv',$cheque_no,'$bank','$branch',$amount)"));
 
 
-    	$res2 =   DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'")); 
+    	$res2 =   DB::statement(DB::raw("UPDATE company SET company_payment_type = '$payment_method',company_apyment_amount = '$amount',company_payment_status = 1 where participant_company = '$company_id'"));
 
 
     	if($res1 == true || $res2 == true){
@@ -114,26 +114,24 @@ class DashboardServices extends Controller
     		 return response()->json(['message' => "fail"]);
     	}
 
-         
+
     }
 
      public function CompanyList(Request $request){
-      	
-    	$result = DB::select("select * from company a where a.company_com_indiv =0 ");
-        
 
-        return response()->json(['data' =>   $result]);
+    	$result = DB::select("select * from company a where a.company_com_indiv =0 ");
+
+
+        return $result;
 
     }
 
        public function IndividualList(Request $request){
-      	
-    	$result = DB::select("select * from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
-       
 
-        return response()->json(['data' =>   $result]);
+    	$individual = DB::select("select * from participant a where a.participant_company in (select company_id from company where company_com_indiv =1 )");
+      $company = $this->CompanyList($request);
 
-
+      return response()->json(['individual' =>   $individual, 'comapany' => $company]);
     }
 
 
@@ -153,16 +151,16 @@ class DashboardServices extends Controller
 
     	   $filename = $PNG_TEMP_DIR.'test.png';
 
-    
+
 
     	   $qr = new BarcodeQR();
 
-    	
-		  $qr->text("IPM test data"); 
+
+		  $qr->text("IPM test data");
 
 		  $qr->draw(200, $filename);
 
-		  echo '<img src="'.$filename.'" /><hr/>'; 
+		  echo '<img src="'.$filename.'" /><hr/>';
 
 
 
@@ -176,9 +174,9 @@ $mailer_fogot->Password = "Water@1234"; // SMTP password
 
 $mailer_fogot->From = "ipm@gmail.com";
 $mailer_fogot->FromName = "Payment details";
-		
 
-    	 
+
+
 $mailer_fogot->AddAddress("achala.dias@hnbassurance.com");
 
 $msgBody = "<img src='".$filename."' /><hr/>";
@@ -198,7 +196,7 @@ if(!$mailer_fogot->Send())
 echo "Sucess!!";
 
 }
-  
+
 
     }
 }
