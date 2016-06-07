@@ -250,7 +250,7 @@ echo "Sucess!!";
      	$country     = $request->input("speakerCountry");
 
 
-     	$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));
+     	$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_image,speaker_country) values('$name','$description',now(),'$image_path','$country')"));
 
 
      	if($res1){
@@ -285,6 +285,22 @@ echo "Sucess!!";
      		return response()->json(['message' => "fail"]);
      	}
 
+
+    }
+
+    public function deleteSpeaker(Request $request){
+
+    	$id    = $request->input("speakerId");
+
+    		$res1 = DB::statement(DB::raw("DELETE FROM speakers where speaker_id = '$id'"));
+
+
+     	if($res1){
+     		 return response()->json(['message' => "success"]);
+     	}else{
+
+     		return response()->json(['message' => "fail"]);
+     	}
 
     }
 
