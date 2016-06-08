@@ -17,10 +17,10 @@ class DashboardServices extends Controller
 
 
    	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
-			  	
+
 		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id ))
 				as 'registered',
-			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )   
+			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )
        			as 'paid'
 				from  company a
 				group by a.company_packagers");
@@ -42,17 +42,17 @@ class DashboardServices extends Controller
 
 
 	 	$result = DB::select("  	select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
-			  	
+
 		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id and attendance_status = 1))
 				as 'registered',
-			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )   
+			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )
        			as 'attendance'
 				from  company a
 				group by a.company_packagers");
 
 
 		return response()->json(['data' =>   $result]);
-  
+
 
 
     }
@@ -151,9 +151,8 @@ class DashboardServices extends Controller
         return $result;
 
     }
- 
+
      public function IndividualList(Request $request){
- 
 
      $individual = DB::select("select a.*,
      	(select (select  b.packagers_name from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_name
@@ -166,6 +165,7 @@ from participant a
       $company = $this->CompanyList($request);
 
       return response()->json(['individual' =>   $individual, 'comapany' => $company]);
+
     }
 
 
@@ -237,56 +237,84 @@ echo "Sucess!!";
 
     public function showAgenda(Request $request){
 
-    	$date = $request->input("agendaDate");
+    	//$date = $request->input("agendaDate");
 
-    	$result = DB::select("select * from agenda where  item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')");
+      $arr = DB::select(DB::raw("select item_date_occurs from agenda group by item_date_occurs"));
+
+      $result = array();
+      foreach ($arr as $a) {
+
+        $temp = DB::select(DB::raw("select a.*,
+        DATE_FORMAT(a.item_time,'%l:%i %p') as start_time,
+        IFNULL((select b.speaker_name from speakers b where b.speaker_id = a.speaker_id),'Not Assigned') as speaker_name
+        from agenda a where a.item_date_occurs = '".$a->item_date_occurs."' order by a.item_time asc"));
+
+          $tempArr = array('date' =>$a->item_date_occurs, 'data'=> $temp);
+          array_push($result , $tempArr);
+      }
 
 
-    	return response()->json(['data' => $request]);
+    //	$result = DB::select("select * from agenda where  item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')");
+
+
+      return response()->json(['data' => $result]);
     }
 
      public function saveAgenda(Request $request){
 
 
-     	
-     	$name        = $request->input("itemName");
-     	$description = $request->input("itemDescription");
-     	$time        = $request->input("itemTime");
-     	$date        = $request->input("ItemDate");
+
+     	$name        = $request->input("name");
+     	$description = $request->input("desc");
+     	$time        = $request->input("time");
 
 
+
+      DB::table('agenda')->insert(
+          array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
+          'item_date_occurs'=>$request->input("dateOccurs"))
+      );
+
+/*
      	$res1 = DB::statement("insert into agenda(item_name,item_description,item_time,item_date)
 			values('$name','$description','$time',STR_TO_DATE('$date', '%d/%m/%Y %r'))
-			");
+			"); */
 
 
-		if($res1){
+	/*	if($res1){
      		 return response()->json(['message' => "success"]);
      	}else{
 
      		return response()->json(['message' => "fail"]);
      	}
-
+*/
     }
 
     public function updateAgenda(Request $request){
 
     	$id 		 = $request->input("itemId");
-    	$name        = $request->input("itemName");
-     	$description = $request->input("itemDescription");
-     	$time        = $request->input("itemTime");
-     	$date        = $request->input("ItemDate");
+    	$name        = $request->input("name");
+     	$description = $request->input("desc");
+     	$time        = $request->input("time");
+     	$date        = $request->input("dateOccurs");
 
-
+  /*
      	$res1 = DB::statement(DB::raw("UPDATE agenda set item_name = '$name',item_description = '$description',item_time = '$item_time',
      		 item_date = STR_TO_DATE('$date', '%d/%m/%Y %r') where id = '$id'"));
 
-     	if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
+       DB::table('agenda')->insert(
+             array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
+             'item_date_occurs'=>$request->input("dateOccurs"))
+         );
 
-     		return response()->json(['message' => "fail"]);
-     	}
+*/
+
+         DB::table('agenda')
+            ->where('id', $request->input("id"))
+            ->update(
+            array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
+            'item_date_occurs'=>$request->input("dateOccurs"))
+          );
 
 
     }
@@ -302,7 +330,6 @@ echo "Sucess!!";
 
      		return response()->json(['message' => "fail"]);
      	}
-
 
     }
 
@@ -386,8 +413,37 @@ echo "Sucess!!";
     public function showAllSpeakers(Request $request){
 
     	$result = DB::select("select * from speakers ");
+      $arr = array();
+      foreach($result as $r){
 
-    	return response()->json(['data' => $result]);
+        $temp = DB::select(DB::raw("select a.* ,  DATE_FORMAT(a.item_time,'%l:%i %p') as start_time from agenda a where a.speaker_id = '".$r->speaker_id."'"));
+        $rating = DB::select(DB::raw("select count(*) as cnt, IFNULL(sum(a.rate_amount),0) as tot
+         from speakerrating a where a.speaker_id  = '".$r->speaker_id."'"));
+
+         if($rating[0]->cnt != 0){
+           $avg = $rating[0]->tot / $rating[0]->cnt;
+        }else{
+            $avg = 0;
+        }
+        $chart = array(); // DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->pluck('rate_amount');
+        for($i=0;$i<6;$i++){
+
+          //$t = DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->where(DB::raw("ROUND(rate_amount) = 3"))->count('rate_amount');
+
+          $t = DB::select(DB::raw("SELECT count(*) as cnt FROM `speakerrating` WHERE round (`rate_amount`) = '".$i."'"));
+
+          array_push($chart,$t[0]->cnt);
+        }
+
+      //  $chart = DB::select(DB::raw(" select rate_amount from speakerrating   where speaker_id  = '".$r->speaker_id."'"))->pluck('rate_amount');
+        $r->agenda = $temp;
+        $r->rating = $avg;
+        $r->chart = $chart;
+        $r->labels = array("No Star", "1 Star", '2 Stars' , "3 Stars", "4 stars", "5 Stars");
+        array_push($arr,$r);
+      }
+
+    	return response()->json(['data' => $arr]);
     }
 
    public function showSpeakerDetailsById(Request $request){
