@@ -9,6 +9,7 @@ use App\QR\BarcodeQR;
 use App\QR\qrlib;
 use App\MailClass\PHPMailer;
 use Vsmoraes\Pdf\Pdf;
+use Mail;
 
 
 class DashboardServices extends Controller
@@ -225,7 +226,7 @@ public function CompanyPayment(Request $request){
                                 else{
 
 
-                                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
                                 $NBT         = $secondTotal*0.02;
                                 $finalAmount = $secondTotal + $NBT;
 
