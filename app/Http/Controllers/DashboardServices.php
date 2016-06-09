@@ -234,7 +234,7 @@ class DashboardServices extends Controller
             Mail::queue('invoive',['imgPath'=>'test.png' ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead, 'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone],
                        function($message) use ($company_email){
 
-                           $message->to($company_email,'IPM')->subject('IPM payment invoice');
+                           $message->to('nilesh.jayanandana@','IPM')->subject('IPM payment invoice');
 
                        });
 
