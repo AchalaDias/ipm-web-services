@@ -16,19 +16,19 @@ class DashboardServices extends Controller
 {
 
 
-  private $pdf;
+    private $pdf;
 
-public function __construct(Pdf $pdf)
-{
-$this->pdf = $pdf;
-}
+    public function __construct(Pdf $pdf)
+    {
+        $this->pdf = $pdf;
+    }
 
 
 
     public function registrationAndPayments(Request $request){
 
 
-   	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers)
+        $PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers)
 	as 'name' ,
 	SUM((select count(*) from company where  company_packagers = a.company_packagers))
 	as 'registered',
@@ -38,7 +38,7 @@ $this->pdf = $pdf;
 	group by a.company_packagers");
 
 
-     return response()->json(['data' =>   $PaymentDetails]);
+        return response()->json(['data' =>   $PaymentDetails]);
 
     }
 
@@ -53,7 +53,7 @@ $this->pdf = $pdf;
     public function registrationVsAttendance(Request $request){
 
 
-	 	$result = DB::select("  	select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
+        $result = DB::select("  	select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
 
 		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id and attendance_status = 1))
 				as 'registered',
@@ -63,13 +63,13 @@ $this->pdf = $pdf;
 				group by a.company_packagers");
 
 
-		return response()->json(['data' =>   $result]);
+        return response()->json(['data' =>   $result]);
 
 
 
     }
 
-/*
+    /*
     public function CompanyPayment(Request $request){
 
 
@@ -109,160 +109,151 @@ $this->pdf = $pdf;
     }
 */
 
-public function CompanyPayment(Request $request){
+    public function CompanyPayment(Request $request){
 
 
-                $payment_method = $request->input("payment_method");
-                $cheque_no      = $request->input("cheque_no");
-                $bank           = $request->input("bank");
-                $branch         = $request->input("branch");
-                $amount         = (float)$request->input("amount");
-                $company_id     = $request->input("company_id");
-                $count                                  = (int)$request->input("count");
+        $payment_method = $request->input("payment_method");
+        $cheque_no      = $request->input("cheque_no");
+        $bank           = $request->input("bank");
+        $branch         = $request->input("branch");
+        $amount         = (float)$request->input("amount");
+        $company_id     = $request->input("company_id");
+        $count                                  = (int)$request->input("count");
 
-                $IndividualAmonut = (float)($amount/$count);
+        $IndividualAmonut = (float)($amount/$count);
 
 
-                $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
-                $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
+        $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
+        $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
 
 
-                $CompanypakageId = $CompanyDetails[0]->company_packagers;
-                $researchCount = 0;
-                $invoiceTotal = 0;
-                $invoiceResearchAmount = 0;;
-                $chargeperHead = 0;
+        $CompanypakageId = $CompanyDetails[0]->company_packagers;
+        $researchCount = 0;
+        $invoiceTotal = 0;
+        $invoiceResearchAmount = 0;;
+        $chargeperHead = 0;
 
 
 
-                foreach ($Pids as $v) {
+        foreach ($Pids as $v) {
 
-                $id = $v->participant_id;
+            $id = $v->participant_id;
 
-                $res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company','$cheque_no','$bank','$branch','$IndividualAmonut')"));
+            $res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company','$cheque_no','$bank','$branch','$IndividualAmonut')"));
 
-                $researchStats = $v->participant_research_status;
-                if($researchStats == 1){
-                                $researchCount++;
-                }
+            $researchStats = $v->participant_research_status;
+            if($researchStats == 1){
+                $researchCount++;
+            }
 
-                                }
+        }
 
-                $res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
+        $res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
 
 
 
-                if($CompanypakageId == 1){
+        if($CompanypakageId == 1){
 
-                                $invoiceTotal = $count*16000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 16000.00;
-                }
-                if($CompanypakageId == 2){
+            $invoiceTotal = $count*16000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 16000.00;
+        }
+        if($CompanypakageId == 2){
 
-                                $invoiceTotal = $count*12000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 12000.00;
-                }
-                if($CompanypakageId == 3){
+            $invoiceTotal = $count*12000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 12000.00;
+        }
+        if($CompanypakageId == 3){
 
-                                $invoiceTotal = $count*12000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 12000.00;
-                }
+            $invoiceTotal = $count*12000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 12000.00;
+        }
 
 
 
 
-                $company_contact_title = $CompanyDetails[0]->company_contact_title;
-                $company_contact_name = $CompanyDetails[0]->company_contact_name;
-                $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
-                $company_contact_email = $CompanyDetails[0]->company_contact_email;
-                $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+        $company_contact_title = $CompanyDetails[0]->company_contact_title;
+        $company_contact_name = $CompanyDetails[0]->company_contact_name;
+        $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
+        $company_contact_email = $CompanyDetails[0]->company_contact_email;
+        $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
 
-                $company_email = $CompanyDetails[0]->company_email;
 
 
-                  $PNG_TEMP_DIR = "../public/QRpng/";
-                  $filename = $PNG_TEMP_DIR.$company_id.'.png';
+        $company_email = $CompanyDetails[0]->company_email;
 
-                  $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:";
 
-                  $qr = new BarcodeQR();
-                                  $qr->text($QRtext);
-                                  $qr->draw(100, $filename);
+        $PNG_TEMP_DIR = "../public/QRpng/";
+        $filename = $PNG_TEMP_DIR.$company_id.'.png';
 
+        $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:";
 
+        $qr = new BarcodeQR();
+        $qr->text($QRtext);
+        $qr->draw(100, $filename);
 
-                if($count >= 5){
 
 
-                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
-                                $discount    = $secondTotal*0.05;
-                                $thirdTotal  = $secondTotal - $discount;
-                                $NBT         = $thirdTotal*0.02;
-                                $finalAmount = $thirdTotal + $NBT;
+        if($count >= 5){
 
 
+            $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+            $discount    = $secondTotal*0.05;
+            $thirdTotal  = $secondTotal - $discount;
+            $NBT         = $thirdTotal*0.02;
+            $finalAmount = $thirdTotal + $NBT;
 
-                                Mail::send('invoiveD',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'discountAmount'=>$discount,'thirdTotal'=>$thirdTotal,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message)  use ($company_email){
 
 
-                                                                $message->to($company_email,'IPM')->subject('IPM payment invoice');
+            Mail::send('invoiveD',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'discountAmount'=>$discount,'thirdTotal'=>$thirdTotal,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message)  use ($company_email){
 
 
+                $message->to($company_email,'IPM')->subject('IPM payment invoice');
 
 
-                                });
 
 
-                                 $this->InvoicePDFD($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$discount,$thirdTotal);
+            });
 
-                                 $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
-                                 return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+            $this->InvoicePDFD($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$discount,$thirdTotal);
 
-                                }
-                                else{
+            $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
+            return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
 
-                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
-                                $NBT         = $secondTotal*0.02;
-                                $finalAmount = $secondTotal + $NBT;
+        }
+        else{
 
-                                                Mail::send('invoive',['imgPath'=>'test.png' ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message) use ($company_email){
+            $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+            $NBT         = $secondTotal*0.02;
+            $finalAmount = $secondTotal + $NBT;
 
-                                                                $message->to($company_email,'IPM')->subject('IPM payment invoice');
+            Mail::send('invoive',['imgPath'=>'test.png' ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead, 'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone],
+                       function($message) use ($company_email){
 
-                                });
+                           $message->to($company_email,'IPM')->subject('IPM payment invoice');
 
-                                                                $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+                       });
 
+    $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
 
-                                                                $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
-                                                 return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+            $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
-                                }
+            return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
 
+        }
 
 
-
-
-    /*       if($res2){
-                                 return response()->json(['message' => $count ]);
-                }
-                else{
-
-                                 return response()->json(['message' => 'fail' ]);
-
-                }*/
 
     }
 
 
 
-/*
+    /*
     public function IndividualPayment(Request $request){
 
 
@@ -302,100 +293,100 @@ public function CompanyPayment(Request $request){
 
 
 
-                $payment_method = $request->input("payment_method");
-                $cheque_no      = $request->input("cheque_no");
-                $bank           = $request->input("bank");
-                $branch         = $request->input("branch");
-                $amount         = $request->input("amount");
-                $participant_id = $request->input("participant_id");
-                $company_id     = $request->input("company_id");
+        $payment_method = $request->input("payment_method");
+        $cheque_no      = $request->input("cheque_no");
+        $bank           = $request->input("bank");
+        $branch         = $request->input("branch");
+        $amount         = $request->input("amount");
+        $participant_id = $request->input("participant_id");
+        $company_id     = $request->input("company_id");
 
-                $count = 1;
-                $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
-                $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
+        $count = 1;
+        $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
+        $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
 
-                $CompanypakageId = $CompanyDetails[0]->company_packagers;
-                $researchCount = 0;
-                $invoiceTotal = 0;
-                $invoiceResearchAmount = 0;;
-                $chargeperHead = 0;
-
-
-                $res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv','$cheque_no','$bank','$branch','$amount')"));
+        $CompanypakageId = $CompanyDetails[0]->company_packagers;
+        $researchCount = 0;
+        $invoiceTotal = 0;
+        $invoiceResearchAmount = 0;;
+        $chargeperHead = 0;
 
 
-                $res2 =   DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
+        $res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv','$cheque_no','$bank','$branch','$amount')"));
 
 
-
-
-                if($CompanypakageId == 1){
-
-                                $invoiceTotal = $count*16000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 16000.00;
-                }
-                if($CompanypakageId == 2){
-
-                                $invoiceTotal = $count*12000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 12000.00;
-                }
-                if($CompanypakageId == 3){
-
-                                $invoiceTotal = $count*12000;
-                                $invoiceResearchAmount = $researchCount*3000;
-                                $chargeperHead = 12000.00;
-                }
-
-
-
-                $company_contact_title = $CompanyDetails[0]->company_contact_title;
-                $company_contact_name = $CompanyDetails[0]->company_contact_name;
-                $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
-                $company_contact_email = $CompanyDetails[0]->company_contact_email;
-                $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
-
-                $participant_email = $Pids[0]->participant_email;
-                $company_email = $CompanyDetails[0]->company_email;
-
-
-
-                  $PNG_TEMP_DIR = "../public/QRpng/";
-                  $filename = $PNG_TEMP_DIR.$company_id.'.png';
-
-                  $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:".$CompanypakageId;
-
-                  $qr = new BarcodeQR();
-                                  $qr->text($QRtext);
-                                  $qr->draw(100, $filename);
-
-                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
-                $NBT         = $secondTotal*0.02;
-                $finalAmount = $secondTotal + $NBT;
-
-                                Mail::send('invoive',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message) use ($company_email,$participant_email){
-
-                                                                $message->to($company_email,'IPM')->to($participant_email,'IPM')->subject('IPM payment invoice');
-
-                                });
-
-
-                                $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
-
-                                $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+        $res2 =   DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
 
 
 
 
-                if($res1 == true && $res2 == true){
+        if($CompanypakageId == 1){
 
-                                return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
-                }
-                else{
+            $invoiceTotal = $count*16000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 16000.00;
+        }
+        if($CompanypakageId == 2){
 
-                                 return response()->json(['message' => "fail"]);
-                }
+            $invoiceTotal = $count*12000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 12000.00;
+        }
+        if($CompanypakageId == 3){
+
+            $invoiceTotal = $count*12000;
+            $invoiceResearchAmount = $researchCount*3000;
+            $chargeperHead = 12000.00;
+        }
+
+
+
+        $company_contact_title = $CompanyDetails[0]->company_contact_title;
+        $company_contact_name = $CompanyDetails[0]->company_contact_name;
+        $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
+        $company_contact_email = $CompanyDetails[0]->company_contact_email;
+        $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+
+        $participant_email = $Pids[0]->participant_email;
+        $company_email = $CompanyDetails[0]->company_email;
+
+
+
+        $PNG_TEMP_DIR = "../public/QRpng/";
+        $filename = $PNG_TEMP_DIR.$company_id.'.png';
+
+        $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:".$CompanypakageId;
+
+        $qr = new BarcodeQR();
+        $qr->text($QRtext);
+        $qr->draw(100, $filename);
+
+        $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+        $NBT         = $secondTotal*0.02;
+        $finalAmount = $secondTotal + $NBT;
+
+        Mail::send('invoive',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message) use ($company_email,$participant_email){
+
+            $message->to($company_email,'IPM')->to($participant_email,'IPM')->subject('IPM payment invoice');
+
+        });
+
+
+        $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+
+        $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+
+
+
+        if($res1 == true && $res2 == true){
+
+            return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+        }
+        else{
+
+            return response()->json(['message' => "fail"]);
+        }
 
 
     }
@@ -403,18 +394,18 @@ public function CompanyPayment(Request $request){
 
     public function IndividualsFromCompany(Request $rquest){
 
-    	$company_id = $rquest->input("companyId");
+        $company_id = $rquest->input("companyId");
 
-    	$result = DB::select("select * from participant where participant_company = '$company_id'");
+        $result = DB::select("select * from participant where participant_company = '$company_id'");
 
-    	return response()->json(['data' => $result]);
+        return response()->json(['data' => $result]);
 
 
     }
 
-     public function CompanyList(Request $request){
+    public function CompanyList(Request $request){
 
-    	$result = DB::select("select a.*,
+        $result = DB::select("select a.*,
       (select  b.packagers_name from packagers b where b.packagers_id = a.company_packagers) as packagers_name,
       (select count(*) from  participant b where b.participant_company = a.company_id) as user_count,
        (select  b.packagers_description from packagers b where b.packagers_id = a.company_packagers) as packagers_description,
@@ -426,9 +417,9 @@ public function CompanyPayment(Request $request){
 
     }
 
-     public function IndividualList(Request $request){
+    public function IndividualList(Request $request){
 
-     $individual = DB::select("select a.*,
+        $individual = DB::select("select a.*,
      	(select (select  b.packagers_name from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_name
 ,(select company_paymant_status from company where company_id  = a.participant_company) as payment_status,
 	(select (select  b.packagers_description from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_description,
@@ -436,9 +427,9 @@ public function CompanyPayment(Request $request){
 from participant a
  where a.participant_company in (select company_id from company where company_com_indiv = 0 )");
 
-      $company = $this->CompanyList($request);
+        $company = $this->CompanyList($request);
 
-      return response()->json(['individual' =>   $individual, 'comapany' => $company]);
+        return response()->json(['individual' =>   $individual, 'comapany' => $company]);
 
     }
 
@@ -446,64 +437,64 @@ from participant a
     public function PaymentProcess(Request $request){
 
 
-    	$payment_method = "cash";
-    	$cheque_no = "null";
-    	$bank = "null";
-    	$branch = "null";
-    	$amount = 23905;
+        $payment_method = "cash";
+        $cheque_no = "null";
+        $bank = "null";
+        $branch = "null";
+        $amount = 23905;
 
 
-    	/*$res =   DB::statement(DB::raw("INSERT INTO payments(payment_method,cheque_no,bank,branch,amount) values('$payment_method',$cheque_no,'$bank','$branch',$amount)")); */
+        /*$res =   DB::statement(DB::raw("INSERT INTO payments(payment_method,cheque_no,bank,branch,amount) values('$payment_method',$cheque_no,'$bank','$branch',$amount)")); */
 
-    	 $PNG_TEMP_DIR = "C:\/xampp\htdocs\IPMwebServices\public\QRpng\/";
+        $PNG_TEMP_DIR = "C:\/xampp\htdocs\IPMwebServices\public\QRpng\/";
 
-    	   $filename = $PNG_TEMP_DIR.'test.png';
-
-
-
-    	   $qr = new BarcodeQR();
-
-
-		  $qr->text("IPM test data");
-
-		  $qr->draw(200, $filename);
-
-		  echo '<img src="'.$filename.'" /><hr/>';
+        $filename = $PNG_TEMP_DIR.'test.png';
 
 
 
+        $qr = new BarcodeQR();
 
-$mailer_fogot = new PHPMailer();
-$mailer_fogot->IsSMTP();          // set mailer to use SMTP
-$mailer_fogot->Host = "smtp.hnbassurance.com";  // specify main and backup server
-$mailer_fogot->SMTPAuth = true;     // turn on SMTP authentication
-$mailer_fogot->Username = "misreports";  // SMTP username
-$mailer_fogot->Password = "Water@1234"; // SMTP password
 
-$mailer_fogot->From = "ipm@gmail.com";
-$mailer_fogot->FromName = "Payment details";
+        $qr->text("IPM test data");
+
+        $qr->draw(200, $filename);
+
+        echo '<img src="'.$filename.'" /><hr/>';
 
 
 
-$mailer_fogot->AddAddress("achala.dias@hnbassurance.com");
 
-$msgBody = "<img src='".$filename."' /><hr/>";
-$mail_body_fog=$msgBody;
+        $mailer_fogot = new PHPMailer();
+        $mailer_fogot->IsSMTP();          // set mailer to use SMTP
+        $mailer_fogot->Host = "smtp.hnbassurance.com";  // specify main and backup server
+        $mailer_fogot->SMTPAuth = true;     // turn on SMTP authentication
+        $mailer_fogot->Username = "misreports";  // SMTP username
+        $mailer_fogot->Password = "Water@1234"; // SMTP password
 
-$mailer_fogot->Subject = "ipm payment details";
-$mailer_fogot->Body=$msgBody;
-$mailer_fogot->AltBody = "";
+        $mailer_fogot->From = "ipm@gmail.com";
+        $mailer_fogot->FromName = "Payment details";
 
-if(!$mailer_fogot->Send())
-{
-   echo "Message could not be sent. <p>";
-   echo "Mailer Error: " . $mailer_fogot->ErrorInfo;
-   exit;
-}else{
 
-echo "Sucess!!";
 
-}
+        $mailer_fogot->AddAddress("achala.dias@hnbassurance.com");
+
+        $msgBody = "<img src='".$filename."' /><hr/>";
+        $mail_body_fog=$msgBody;
+
+        $mailer_fogot->Subject = "ipm payment details";
+        $mailer_fogot->Body=$msgBody;
+        $mailer_fogot->AltBody = "";
+
+        if(!$mailer_fogot->Send())
+        {
+            echo "Message could not be sent. <p>";
+            echo "Mailer Error: " . $mailer_fogot->ErrorInfo;
+            exit;
+        }else{
+
+            echo "Sucess!!";
+
+        }
 
 
     }
@@ -511,51 +502,51 @@ echo "Sucess!!";
 
     public function showAgenda(Request $request){
 
-    	//$date = $request->input("agendaDate");
+        //$date = $request->input("agendaDate");
 
-      $arr = DB::select(DB::raw("select item_date_occurs from agenda group by item_date_occurs"));
+        $arr = DB::select(DB::raw("select item_date_occurs from agenda group by item_date_occurs"));
 
-      $result = array();
-      foreach ($arr as $a) {
+        $result = array();
+        foreach ($arr as $a) {
 
-        $temp = DB::select(DB::raw("select a.*,
+            $temp = DB::select(DB::raw("select a.*,
         DATE_FORMAT(a.item_time,'%l:%i %p') as start_time,
         IFNULL((select b.speaker_name from speakers b where b.speaker_id = a.speaker_id),'Not Assigned') as speaker_name
         from agenda a where a.item_date_occurs = '".$a->item_date_occurs."' order by a.item_time asc"));
 
-          $tempArr = array('date' =>$a->item_date_occurs, 'data'=> $temp);
-          array_push($result , $tempArr);
-      }
+            $tempArr = array('date' =>$a->item_date_occurs, 'data'=> $temp);
+            array_push($result , $tempArr);
+        }
 
 
-    //	$result = DB::select("select * from agenda where  item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')");
+        //	$result = DB::select("select * from agenda where  item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')");
 
 
-      return response()->json(['data' => $result]);
+        return response()->json(['data' => $result]);
     }
 
-     public function saveAgenda(Request $request){
+    public function saveAgenda(Request $request){
 
 
 
-     	$name        = $request->input("name");
-     	$description = $request->input("desc");
-     	$time        = $request->input("time");
+        $name        = $request->input("name");
+        $description = $request->input("desc");
+        $time        = $request->input("time");
 
 
 
-      DB::table('agenda')->insert(
-          array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
-          'item_date_occurs'=>$request->input("dateOccurs"))
-      );
+        DB::table('agenda')->insert(
+            array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
+                  'item_date_occurs'=>$request->input("dateOccurs"))
+        );
 
-/*
+        /*
      	$res1 = DB::statement("insert into agenda(item_name,item_description,item_time,item_date)
 			values('$name','$description','$time',STR_TO_DATE('$date', '%d/%m/%Y %r'))
 			"); */
 
 
-	/*	if($res1){
+        /*	if($res1){
      		 return response()->json(['message' => "success"]);
      	}else{
 
@@ -566,13 +557,13 @@ echo "Sucess!!";
 
     public function updateAgenda(Request $request){
 
-    	$id 		 = $request->input("itemId");
-    	$name        = $request->input("name");
-     	$description = $request->input("desc");
-     	$time        = $request->input("time");
-     	$date        = $request->input("dateOccurs");
+        $id 		 = $request->input("itemId");
+        $name        = $request->input("name");
+        $description = $request->input("desc");
+        $time        = $request->input("time");
+        $date        = $request->input("dateOccurs");
 
-  /*
+        /*
      	$res1 = DB::statement(DB::raw("UPDATE agenda set item_name = '$name',item_description = '$description',item_time = '$item_time',
      		 item_date = STR_TO_DATE('$date', '%d/%m/%Y %r') where id = '$id'"));
 
@@ -583,177 +574,177 @@ echo "Sucess!!";
 
 */
 
-         DB::table('agenda')
+        DB::table('agenda')
             ->where('id', $request->input("id"))
             ->update(
             array('item_name' =>$name,'item_description' => $description ,'item_time'=> $time, 'speaker_id' => $request->input("speaker"),
-            'item_date_occurs'=>$request->input("dateOccurs"))
-          );
+                  'item_date_occurs'=>$request->input("dateOccurs"))
+        );
 
 
     }
 
     public function deleteAgendaItemByID(Request $request){
 
-    	$id 		 = $request->input("itemId");
-    	$res1 = DB::statement(DB::raw("DELETE FROM agenda where id = '$id'"));
+        $id 		 = $request->input("itemId");
+        $res1 = DB::statement(DB::raw("DELETE FROM agenda where id = '$id'"));
 
-    		if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
+        if($res1){
+            return response()->json(['message' => "success"]);
+        }else{
 
-     		return response()->json(['message' => "fail"]);
-     	}
-
-    }
-
-     public function deleteAllAgendaItemsFromDate(Request $request){
-
-    	$date 		 = $request->input("date");
-    	$res1 = DB::statement(DB::raw("DELETE FROM agenda where item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')"));
-
-    		if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
-
-     		return response()->json(['message' => "fail"]);
-     	}
-
+            return response()->json(['message' => "fail"]);
+        }
 
     }
 
-     public function addSpeakers(Request $request){
+    public function deleteAllAgendaItemsFromDate(Request $request){
 
-     	$name        = $request->input("speakerName");
-     	$description = $request->input("speakerDescription");
-     	$image_path  = $request->input("speakerImage");
-     	$country     = $request->input("speakerCountry");
+        $date 		 = $request->input("date");
+        $res1 = DB::statement(DB::raw("DELETE FROM agenda where item_date = STR_TO_DATE('$date', '%d/%m/%Y %r')"));
 
+        if($res1){
+            return response()->json(['message' => "success"]);
+        }else{
 
-     	$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_image,speaker_country) values('$name','$description',now(),'$image_path','$country')"));
-
-
-     	if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
-
-     		return response()->json(['message' => "fail"]);
-     	}
+            return response()->json(['message' => "fail"]);
+        }
 
 
     }
 
-      public function UpdateSpeakers(Request $request){
+    public function addSpeakers(Request $request){
 
-      	$id          = $request->input("speakerId");
-     	$name        = $request->input("speakerName");
-     	$description = $request->input("speakerDescription");
-     	$image_path  = $request->input("speakerImage");
-     	$country     = $request->input("speakerCountry");
+        $name        = $request->input("speakerName");
+        $description = $request->input("speakerDescription");
+        $image_path  = $request->input("speakerImage");
+        $country     = $request->input("speakerCountry");
 
 
-     	/*$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));*/
+        $res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_image,speaker_country) values('$name','$description',now(),'$image_path','$country')"));
 
-     	$res1 = DB::statement(DB::raw("UPDATE speakers set speaker_description = '$description',speaker_name = '$name',speaker_datetime = now(),
+
+        if($res1){
+            return response()->json(['message' => "success"]);
+        }else{
+
+            return response()->json(['message' => "fail"]);
+        }
+
+
+    }
+
+    public function UpdateSpeakers(Request $request){
+
+        $id          = $request->input("speakerId");
+        $name        = $request->input("speakerName");
+        $description = $request->input("speakerDescription");
+        $image_path  = $request->input("speakerImage");
+        $country     = $request->input("speakerCountry");
+
+
+        /*$res1 = DB::statement(DB::raw("INSERT INTO speakers(speaker_name,speaker_description,speaker_datetime,speaker_imgae,speaker_country) values('$name','$description',now(),$image_path,'$image_path','$country')"));*/
+
+        $res1 = DB::statement(DB::raw("UPDATE speakers set speaker_description = '$description',speaker_name = '$name',speaker_datetime = now(),
      		speaker_country = '$country' where speaker_id = '$id'"));
 
 
-     	if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
+        if($res1){
+            return response()->json(['message' => "success"]);
+        }else{
 
-     		return response()->json(['message' => "fail"]);
-     	}
+            return response()->json(['message' => "fail"]);
+        }
 
 
     }
 
     public function deleteSpeaker(Request $request){
 
-    	$id    = $request->input("speakerId");
+        $id    = $request->input("speakerId");
 
-    		$res1 = DB::statement(DB::raw("DELETE FROM speakers where speaker_id = '$id'"));
+        $res1 = DB::statement(DB::raw("DELETE FROM speakers where speaker_id = '$id'"));
 
 
-     	if($res1){
-     		 return response()->json(['message' => "success"]);
-     	}else{
+        if($res1){
+            return response()->json(['message' => "success"]);
+        }else{
 
-     		return response()->json(['message' => "fail"]);
-     	}
+            return response()->json(['message' => "fail"]);
+        }
 
     }
 
     public function showAllSpeakers(Request $request){
 
-    	$result = DB::select("select * from speakers ");
-      $arr = array();
-      foreach($result as $r){
+        $result = DB::select("select * from speakers ");
+        $arr = array();
+        foreach($result as $r){
 
-        $temp = DB::select(DB::raw("select a.* ,  DATE_FORMAT(a.item_time,'%l:%i %p') as start_time from agenda a where a.speaker_id = '".$r->speaker_id."'"));
-        $rating = DB::select(DB::raw("select count(*) as cnt, IFNULL(sum(a.rate_amount),0) as tot
+            $temp = DB::select(DB::raw("select a.* ,  DATE_FORMAT(a.item_time,'%l:%i %p') as start_time from agenda a where a.speaker_id = '".$r->speaker_id."'"));
+            $rating = DB::select(DB::raw("select count(*) as cnt, IFNULL(sum(a.rate_amount),0) as tot
          from speakerrating a where a.speaker_id  = '".$r->speaker_id."'"));
 
-         if($rating[0]->cnt != 0){
-           $avg = $rating[0]->tot / $rating[0]->cnt;
-        }else{
-            $avg = 0;
+            if($rating[0]->cnt != 0){
+                $avg = $rating[0]->tot / $rating[0]->cnt;
+            }else{
+                $avg = 0;
+            }
+            $chart = array(); // DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->pluck('rate_amount');
+            for($i=0;$i<6;$i++){
+
+                //$t = DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->where(DB::raw("ROUND(rate_amount) = 3"))->count('rate_amount');
+
+                $t = DB::select(DB::raw("SELECT count(*) as cnt FROM `speakerrating` WHERE round (`rate_amount`) = '".$i."'"));
+
+                array_push($chart,$t[0]->cnt);
+            }
+
+            //  $chart = DB::select(DB::raw(" select rate_amount from speakerrating   where speaker_id  = '".$r->speaker_id."'"))->pluck('rate_amount');
+            $r->agenda = $temp;
+            $r->rating = $avg;
+            $r->chart = $chart;
+            $r->labels = array("No Star", "1 Star", '2 Stars' , "3 Stars", "4 stars", "5 Stars");
+            array_push($arr,$r);
         }
-        $chart = array(); // DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->pluck('rate_amount');
-        for($i=0;$i<6;$i++){
 
-          //$t = DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->where(DB::raw("ROUND(rate_amount) = 3"))->count('rate_amount');
-
-          $t = DB::select(DB::raw("SELECT count(*) as cnt FROM `speakerrating` WHERE round (`rate_amount`) = '".$i."'"));
-
-          array_push($chart,$t[0]->cnt);
-        }
-
-      //  $chart = DB::select(DB::raw(" select rate_amount from speakerrating   where speaker_id  = '".$r->speaker_id."'"))->pluck('rate_amount');
-        $r->agenda = $temp;
-        $r->rating = $avg;
-        $r->chart = $chart;
-        $r->labels = array("No Star", "1 Star", '2 Stars' , "3 Stars", "4 stars", "5 Stars");
-        array_push($arr,$r);
-      }
-
-    	return response()->json(['data' => $arr]);
+        return response()->json(['data' => $arr]);
     }
 
-   public function showSpeakerDetailsById(Request $request){
+    public function showSpeakerDetailsById(Request $request){
 
-   	$id  = $request->input("speakerId");
+        $id  = $request->input("speakerId");
 
-    	$result = DB::select("select * from speakers where speaker_id = '$id'");
+        $result = DB::select("select * from speakers where speaker_id = '$id'");
 
-    	return response()->json(['data' => $result]);
+        return response()->json(['data' => $result]);
     }
 
 
     public function ratingAmount(Request $request){
 
-    	$result = DB::select("select a.*,sum(a.rate_amonut),count(a.participant_id) from speakerRating a group by a.speaker_id");
+        $result = DB::select("select a.*,sum(a.rate_amonut),count(a.participant_id) from speakerRating a group by a.speaker_id");
 
-    	return response()->json(['data' => $result]);
+        return response()->json(['data' => $result]);
 
 
     }
 
     public function userLoginDetails(Request $request){
 
-    	$username = $request->input("username");
-    	$password = $request->input("password");
+        $username = $request->input("username");
+        $password = $request->input("password");
 
-    	$result = DB::select("select * from user where user_username = '$username' and user_password = '$password'");
+        $result = DB::select("select * from user where user_username = '$username' and user_password = '$password'");
 
-    	return response()->json(['data' => $result]);
+        return response()->json(['data' => $result]);
 
     }
 
 
     public function InvoicePDFD($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$discountAmount,$thirdTotal){
 
-                                    $html = '
+        $html = '
     <html>
         <head>
         </head>
@@ -1025,18 +1016,18 @@ echo "Sucess!!";
     ';
 
 
-              return $this->pdf
-                ->load($html)
-                ->filename('PDF/'.$invoiceId.'.pdf')
-                    ->output();
+        return $this->pdf
+            ->load($html)
+            ->filename('PDF/'.$invoiceId.'.pdf')
+            ->output();
 
 
-        }
+    }
 
 
-         public function InvoicePDF($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone){
+    public function InvoicePDF($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone){
 
-                                    $html = '
+        $html = '
     <html>
         <head>
         </head>
@@ -1296,14 +1287,14 @@ echo "Sucess!!";
     ';
 
 
-            return $this->pdf
-                ->load($html)
-                ->filename('PDF/'.$invoiceId.'.pdf')
-                    ->output();
+        return $this->pdf
+            ->load($html)
+            ->filename('PDF/'.$invoiceId.'.pdf')
+            ->output();
 
 
 
-        }
+    }
 
 
 
