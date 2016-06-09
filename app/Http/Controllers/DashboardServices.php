@@ -8,10 +8,21 @@ use App\Http\Requests;
 use App\QR\BarcodeQR;
 use App\QR\qrlib;
 use App\MailClass\PHPMailer;
+use Vsmoraes\Pdf\Pdf;
 
 
 class DashboardServices extends Controller
 {
+
+
+  private $pdf;
+
+public function __construct(Pdf $pdf)
+{
+$this->pdf = $pdf;
+}
+
+
 
     public function registrationAndPayments(Request $request){
 
@@ -57,7 +68,7 @@ class DashboardServices extends Controller
 
     }
 
-
+/*
     public function CompanyPayment(Request $request){
 
 
@@ -95,7 +106,162 @@ class DashboardServices extends Controller
     	}
 
     }
+*/
 
+public function CompanyPayment(Request $request){
+
+
+                $payment_method = $request->input("payment_method");
+                $cheque_no      = $request->input("cheque_no");
+                $bank           = $request->input("bank");
+                $branch         = $request->input("branch");
+                $amount         = (float)$request->input("amount");
+                $company_id     = $request->input("company_id");
+                $count                                  = (int)$request->input("count");
+
+                $IndividualAmonut = (float)($amount/$count);
+
+
+                $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
+                $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
+
+
+                $CompanypakageId = $CompanyDetails[0]->company_packagers;
+                $researchCount = 0;
+                $invoiceTotal = 0;
+                $invoiceResearchAmount = 0;;
+                $chargeperHead = 0;
+
+
+
+                foreach ($Pids as $v) {
+
+                $id = $v->participant_id;
+
+                $res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company','$cheque_no','$bank','$branch','$IndividualAmonut')"));
+
+                $researchStats = $v->participant_research_status;
+                if($researchStats == 1){
+                                $researchCount++;
+                }
+
+                                }
+
+                $res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
+
+
+
+                if($CompanypakageId == 1){
+
+                                $invoiceTotal = $count*16000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 16000.00;
+                }
+                if($CompanypakageId == 2){
+
+                                $invoiceTotal = $count*12000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 12000.00;
+                }
+                if($CompanypakageId == 3){
+
+                                $invoiceTotal = $count*12000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 12000.00;
+                }
+
+
+
+
+                $company_contact_title = $CompanyDetails[0]->company_contact_title;
+                $company_contact_name = $CompanyDetails[0]->company_contact_name;
+                $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
+                $company_contact_email = $CompanyDetails[0]->company_contact_email;
+                $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+
+                $company_email = $CompanyDetails[0]->company_email;
+
+
+                  $PNG_TEMP_DIR = "../public/QRpng/";
+                  $filename = $PNG_TEMP_DIR.$company_id.'.png';
+
+                  $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:";
+
+                  $qr = new BarcodeQR();
+                                  $qr->text($QRtext);
+                                  $qr->draw(100, $filename);
+
+
+
+                if($count >= 5){
+
+
+                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+                                $discount    = $secondTotal*0.05;
+                                $thirdTotal  = $secondTotal - $discount;
+                                $NBT         = $thirdTotal*0.02;
+                                $finalAmount = $thirdTotal + $NBT;
+
+
+
+                                Mail::send('invoiveD',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'discountAmount'=>$discount,'thirdTotal'=>$thirdTotal,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message)  use ($company_email){
+
+
+                                                                $message->to($company_email,'IPM')->subject('IPM payment invoice');
+
+
+
+
+                                });
+
+
+                                 $this->InvoicePDFD($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$discount,$thirdTotal);
+
+                                 $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+                                 return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+
+                                }
+                                else{
+
+
+                                                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+                                $NBT         = $secondTotal*0.02;
+                                $finalAmount = $secondTotal + $NBT;
+
+                                                Mail::send('invoive',['imgPath'=>'test.png' ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message) use ($company_email){
+
+                                                                $message->to($company_email,'IPM')->subject('IPM payment invoice');
+
+                                });
+
+                                                                $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+
+
+                                                                $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+                                                 return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+
+                                }
+
+
+
+
+
+    /*       if($res2){
+                                 return response()->json(['message' => $count ]);
+                }
+                else{
+
+                                 return response()->json(['message' => 'fail' ]);
+
+                }*/
+
+    }
+
+
+
+/*
     public function IndividualPayment(Request $request){
 
 
@@ -126,6 +292,113 @@ class DashboardServices extends Controller
 
 
     }
+
+    */
+
+
+
+    public function IndividualPayment(Request $request){
+
+
+
+                $payment_method = $request->input("payment_method");
+                $cheque_no      = $request->input("cheque_no");
+                $bank           = $request->input("bank");
+                $branch         = $request->input("branch");
+                $amount         = $request->input("amount");
+                $participant_id = $request->input("participant_id");
+                $company_id     = $request->input("company_id");
+
+                $count = 1;
+                $CompanyDetails = DB::select("select * from company where company_id = '$company_id'");
+                $Pids   = DB::select("select * from participant where participant_company = '$company_id'");
+
+                $CompanypakageId = $CompanyDetails[0]->company_packagers;
+                $researchCount = 0;
+                $invoiceTotal = 0;
+                $invoiceResearchAmount = 0;;
+                $chargeperHead = 0;
+
+
+                $res1 =   DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$participant_id','$payment_method','indv','$cheque_no','$bank','$branch','$amount')"));
+
+
+                $res2 =   DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
+
+
+
+
+                if($CompanypakageId == 1){
+
+                                $invoiceTotal = $count*16000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 16000.00;
+                }
+                if($CompanypakageId == 2){
+
+                                $invoiceTotal = $count*12000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 12000.00;
+                }
+                if($CompanypakageId == 3){
+
+                                $invoiceTotal = $count*12000;
+                                $invoiceResearchAmount = $researchCount*3000;
+                                $chargeperHead = 12000.00;
+                }
+
+
+
+                $company_contact_title = $CompanyDetails[0]->company_contact_title;
+                $company_contact_name = $CompanyDetails[0]->company_contact_name;
+                $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
+                $company_contact_email = $CompanyDetails[0]->company_contact_email;
+                $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+
+                $participant_email = $Pids[0]->participant_email;
+                $company_email = $CompanyDetails[0]->company_email;
+
+
+
+                  $PNG_TEMP_DIR = "../public/QRpng/";
+                  $filename = $PNG_TEMP_DIR.$company_id.'.png';
+
+                  $QRtext = "company_id:".$company_id."|participant_count:".$count."|package_id:".$CompanypakageId;
+
+                  $qr = new BarcodeQR();
+                                  $qr->text($QRtext);
+                                  $qr->draw(100, $filename);
+
+                $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+                $NBT         = $secondTotal*0.02;
+                $finalAmount = $secondTotal + $NBT;
+
+                                Mail::send('invoive',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead,'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone], function($message) use ($company_email,$participant_email){
+
+                                                                $message->to($company_email,'IPM')->to($participant_email,'IPM')->subject('IPM payment invoice');
+
+                                });
+
+
+                                $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+
+                                $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+
+
+
+                if($res1 == true && $res2 == true){
+
+                                return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+                }
+                else{
+
+                                 return response()->json(['message' => "fail"]);
+                }
+
+
+    }
+
 
     public function IndividualsFromCompany(Request $rquest){
 
@@ -475,6 +748,563 @@ echo "Sucess!!";
     	return response()->json(['data' => $result]);
 
     }
+
+
+    public function InvoicePDFD($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$discountAmount,$thirdTotal){
+
+                                    $html = '
+    <html>
+        <head>
+        </head>
+        <body style="margin: 0">
+            <table width="90%" cellspcing="0" cellpadding="0" border="0" style="font-family: Arial, Helvetica, sans-serif; background-color: #ffffff; border-collapse:collapse;">
+                <tbody>
+                    <!--Top area-->
+                    <tr>
+                        <td align="center">
+                            <table width="600" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td width="20%">
+                                            <table  cellspcing="0" border="0" cellpadding="0" style="background: #ffffff; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height: 22px"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <img src="IPMLogo/ipm-logo.png" >
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 23px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                        <td width="80%" align="right">
+                                            <table  cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height:26px "></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif;  background: #ffffff; border-collapse: collapse">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="font-family: Arial, Helvetica, sans-serif;font-size: 18px;font-weight: 400;color: #000;padding-bottom: 4px">Support  (+94) 11 2199988</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-family:  Arial, Helvetica, sans-serif;  font-size: 14px;color: rgba(0,0,0,0.56);text-align: right">Feb 1, 2016 01:01:42</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-family:  Arial, Helvetica, sans-serif; font-size: 14px;color: rgba(0,0,0,0.56);text-align: right"><span>Invoice No : </span>INV0002589 - '.str_pad($invoiceId , 4, '0', STR_PAD_LEFT).'</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 12px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!--middle area-->
+                    <tr>
+                        <td align="center" style="background: #25c3cc;">
+                            <table width="640"  cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #25c3cc; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td style="height: 31px"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <table width="84%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                <tr>
+                                                    <td colspan="3" style="padding: 20px"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="color:#020202;font-weight: bold;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;padding-bottom: 22px;">Hi '.$username.',</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style="color:#333333;font-weight: 400;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;">
+                                                                        This is to confirm your payment of Rs '.$UserAmount.'/= for the registration at National HRConference 2016 organized by IPM Sri Lanka <a style="color:rgba(51, 51, 51, 0.89);text-decoration: none; font-weight: 600; " href="mailto:ipminfo@ipmlk.org">(ipminfo@ipmlk.org)</a> .
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse;border: 1px solid #d5d5d5">
+                                                            <thead style="background: #c0c0c0">
+                                                                <tr style="color: #ffffff;font-size: 12px;font-family: Arial, Helvetica, sans-serif;text-align: center">
+                                                                    <th style="width: 203px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Description</th>
+                                                                    <th style="width: 118px; padding: 10px 0; border: 1px solid #d5d5d5;">No of participants</th>
+                                                                    <th style="width: 118px; padding: 10px 0; border: 1px solid #d5d5d5;">Charge per Head</th>
+                                                                    <th style="width: 118px; padding: 10px 20px 10px 0; border: 1px solid #d5d5d5;  text-align: right">Sub Total</th>
+
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody style="color: #333333; font-size: 12px; font-family: Arial, Helvetica, sans-serif; text-align: center">
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">NHRC 2016 - Participant fee (Non Member)</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$count.'</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$chargeperHead.' LKR</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$firstAmount.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">Research Symposium </td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$researchCount.'</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">3000.00 LKR</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right">'.$invoiceResearchAmount.'.00 LKR</td>
+                                                                </tr>
+
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; text-align: right">'.$secondTotal.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">Discount 5%</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right">'.$discountAmount.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; text-align: right">'.$thirdTotal.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">NBT 2%</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right">'.$NBT.'.00 LKR</td>
+                                                                </tr>
+
+                                                                <tr style="vertical-align: top; color: #333333;background: #f5f5f5">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; text-align: left; text-transform: uppercase; font-weight: bold">Total</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right; text-transform: uppercase; font-weight: bold">'.$finalAmount.'.00 LKR</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 20px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td style="color:#333333;font-weight: bold;font-size: 12px;font-family:  Arial, Helvetica, sans-serif; font-weight: 400;">NBT Reg. No : 409060870-9000 </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 22px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                            <tbody>
+
+                                                                <tr style="vertical-align: top">
+                                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; width: 33%">Contact Infomation :</td>
+                                                                    <td style="color: #333333; font-size: 14px; font-weight: 400; width: 67%">
+                                                                       '.$company_contact_title.$company_contact_name.',
+                                                                        <br>Designation:'.$company_contact_designation.',
+                                                                        <br>'.$company_contact_email.',
+                                                                        <br>'.$company_contact_phone.'.
+
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 40px;"></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="height: 30px"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!--bottom area-->
+                    <tr>
+                        <td align="center" style=" background: #090924;">
+                            <table width="600" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <table width="94%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height: 22px;"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color: #ffffff; font-weight: bold; font-size: 24px; text-align: center"><span>Invoice No : </span>INV0002589 - '.str_pad($invoiceId , 4, '0', STR_PAD_LEFT).'</td>
+                                                        <td><img src='.$filename.' /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 40px;"></td>
+
+
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <table width="94%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                                <tbody style="color: #676773; font-weight: 400; font-size: 14px; text-align: left">
+                                                    <tr >
+                                                        <td style="padding-bottom: 20px;color: #676773;">By using these products, you agree that you are bound by the <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;">Terms of Service</a> and <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;"> Privacy Policy.</a> Learn more about our  <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;"> Refund Policy</a>.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding-bottom: 20px; color: #676773;">
+                                                            Keep your Invoice number (shown above) for future reference. You will need to refer to this number if you need<br>customer service from Institute of Personnel Management Sri Lanka.
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding-bottom: 20px; color: #676773;">
+                                                            Please do not reply to this email. Email sent to this address cannot be answered.
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color: #676773;"> Copyright &copy; 1999-2016 PayPal. All rights reserved. </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 60px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+    </html>
+    ';
+
+
+              return $this->pdf
+                ->load($html)
+                ->filename('PDF/'.$invoiceId.'.pdf')
+                    ->output();
+
+
+        }
+
+
+         public function InvoicePDF($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone){
+
+                                    $html = '
+    <html>
+        <head>
+        </head>
+        <body style="margin: 0">
+            <table width="90%" cellspcing="0" cellpadding="0" border="0" style="font-family: Arial, Helvetica, sans-serif; background-color: #ffffff; border-collapse:collapse;">
+                <tbody>
+                    <!--Top area-->
+                    <tr>
+                        <td align="center">
+                            <table width="600" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td width="20%">
+                                            <table  cellspcing="0" border="0" cellpadding="0" style="background: #ffffff; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height: 22px"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <img src="IPMLogo/ipm-logo.png" >
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 23px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                        <td width="80%" align="right">
+                                            <table  cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height:26px "></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif;  background: #ffffff; border-collapse: collapse">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="font-family: Arial, Helvetica, sans-serif;font-size: 18px;font-weight: 400;color: #000;padding-bottom: 4px">Support  (+94) 11 2199988</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-family:  Arial, Helvetica, sans-serif;  font-size: 14px;color: rgba(0,0,0,0.56);text-align: right">Feb 1, 2016 01:01:42</td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="font-family:  Arial, Helvetica, sans-serif; font-size: 14px;color: rgba(0,0,0,0.56);text-align: right"><span>Invoice No : </span>INV0002589 - '.str_pad($invoiceId , 4, '0', STR_PAD_LEFT).'</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 12px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!--middle area-->
+                    <tr>
+                        <td align="center" style="background: #25c3cc;">
+                            <table width="640"  cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #25c3cc; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td style="height: 31px"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <table width="84%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                <tr>
+                                                    <td colspan="3" style="padding: 20px"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="color:#020202;font-weight: bold;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;padding-bottom: 22px;">Hi '.$username.',</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style="color:#333333;font-weight: 400;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;">
+                                                                        This is to confirm your payment of Rs '.$UserAmount.'/= for the registration at National HRConference 2016 organized by IPM Sri Lanka <a style="color:rgba(51, 51, 51, 0.89);text-decoration: none; font-weight: 600; " href="mailto:ipminfo@ipmlk.org">(ipminfo@ipmlk.org)</a> .
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse;border: 1px solid #d5d5d5">
+                                                            <thead style="background: #c0c0c0">
+                                                                <tr style="color: #ffffff;font-size: 12px;font-family: Arial, Helvetica, sans-serif;text-align: center">
+                                                                    <th style="width: 203px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Description</th>
+                                                                    <th style="width: 118px; padding: 10px 0; border: 1px solid #d5d5d5;">No of participants</th>
+                                                                    <th style="width: 118px; padding: 10px 0; border: 1px solid #d5d5d5;">Charge per Head</th>
+                                                                    <th style="width: 118px; padding: 10px 20px 10px 0; border: 1px solid #d5d5d5;  text-align: right">Sub Total</th>
+
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody style="color: #333333; font-size: 12px; font-family: Arial, Helvetica, sans-serif; text-align: center">
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">NHRC 2016 - Participant fee (Non Member)</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$count.'</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$chargeperHead.' LKR</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$firstAmount.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">Research Symposium </td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">'.$researchCount.'</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">3000.00 LKR</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right">'.$invoiceResearchAmount.'.00 LKR</td>
+                                                                </tr>
+
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; text-align: right">'.$secondTotal.'.00 LKR</td>
+                                                                </tr>
+                                                                <tr style="vertical-align: top; color: #333333;">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; border-right: 1px solid #d5d5d5; text-align: left;">NBT 2%</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right">'.$NBT.'.00 LKR</td>
+                                                                </tr>
+
+                                                                <tr style="vertical-align: top; color: #333333;background: #f5f5f5">
+                                                                    <td style="width: 203px; padding: 10px 0 0 20px; text-align: left; text-transform: uppercase; font-weight: bold">Total</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 0 0; border-right: 1px solid #d5d5d5; text-align: right">&nbsp;</td>
+                                                                    <td style="width: 118px; padding: 10px 20px 10px 0; border-right: 1px solid #d5d5d5; border-bottom: 1px solid #d5d5d5; text-align: right; text-transform: uppercase; font-weight: bold">'.$finalAmount.'.00 LKR</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 20px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td style="color:#333333;font-weight: bold;font-size: 12px;font-family:  Arial, Helvetica, sans-serif; font-weight: 400;">NBT Reg. No : 409060870-9000 </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 22px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="width: 40px;"></td>
+                                                    <td>
+                                                        <table width="100%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #ffffff; border-collapse: collapse">
+                                                            <tbody>
+
+                                                                <tr style="vertical-align: top">
+                                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; width: 33%">Contact Infomation :</td>
+                                                                    <td style="color: #333333; font-size: 14px; font-weight: 400; width: 67%">
+                                                                       '.$company_contact_title.$company_contact_name.',
+                                                                        <br>Designation:'.$company_contact_designation.',
+                                                                        <br>'.$company_contact_email.',
+                                                                        <br>'.$company_contact_phone.'.
+
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td style="width: 40px;"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="height: 40px;"></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="height: 30px"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!--bottom area-->
+                    <tr>
+                        <td align="center" style=" background: #090924;">
+                            <table width="600" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <table width="94%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="height: 22px;"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color: #ffffff; font-weight: bold; font-size: 24px; text-align: center"><span>Invoice No : </span>INV0002589 - '.str_pad($invoiceId , 4, '0', STR_PAD_LEFT).'</td>
+                                                        <td><img src='.$filename.' /></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 40px;"></td>
+
+
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <table width="94%" cellspcing="0" border="0" cellpadding="0" style="font-family:  Arial, Helvetica, sans-serif; background: #090924; border-collapse: collapse">
+                                                <tbody style="color: #676773; font-weight: 400; font-size: 14px; text-align: left">
+                                                    <tr >
+                                                        <td style="padding-bottom: 20px;color: #676773;">By using these products, you agree that you are bound by the <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;">Terms of Service</a> and <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;"> Privacy Policy.</a> Learn more about our  <a href="#a" style="color: #cdcdcd; text-decoration: none;border-bottom: 2px solid #84848a;"> Refund Policy</a>.</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding-bottom: 20px; color: #676773;">
+                                                            Keep your Invoice number (shown above) for future reference. You will need to refer to this number if you need<br>customer service from Institute of Personnel Management Sri Lanka.
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding-bottom: 20px; color: #676773;">
+                                                            Please do not reply to this email. Email sent to this address cannot be answered.
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="color: #676773;"> Copyright &copy; 1999-2016 PayPal. All rights reserved. </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="height: 60px;"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+    </html>
+    ';
+
+
+            return $this->pdf
+                ->load($html)
+                ->filename('PDF/'.$invoiceId.'.pdf')
+                    ->output();
+
+
+
+        }
+
+
 
 
 
