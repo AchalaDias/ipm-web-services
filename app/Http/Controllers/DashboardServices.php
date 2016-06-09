@@ -461,7 +461,7 @@ echo "Sucess!!";
     	$result = DB::select("select a.*,sum(a.rate_amonut),count(a.participant_id) from speakerRating a group by a.speaker_id");
 
     	return response()->json(['data' => $result]);
-
+ 
 
     }
 
