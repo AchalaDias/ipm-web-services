@@ -384,7 +384,7 @@ class DashboardServices extends Controller
 
         if($res1 == true && $res2 == true){
 
-            return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+            return response()->json(['message' => 'success','PDF_file'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$pdfPath]);
         }
         else{
 
