@@ -16,14 +16,14 @@ class DashboardServices extends Controller
     public function registrationAndPayments(Request $request){
 
 
-   	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers) as 'name' ,
-
-		SUM((select count(p.participant_id) from participant p where p.participant_company = a.company_id ))
-				as 'registered',
-			    SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )
-       			as 'paid'
-				from  company a
-				group by a.company_packagers");
+   	   	$PaymentDetails = DB::select("select (select k.packagers_name from packagers k where k.packagers_id = a.company_packagers)
+	as 'name' ,
+	SUM((select count(*) from company where  company_packagers = a.company_packagers))
+	as 'registered',
+	SUM((select count(*) from company where company_paymant_status != 0  and company_packagers = a.company_packagers) )
+	as 'paid'
+	from  company a
+	group by a.company_packagers");
 
 
      return response()->json(['data' =>   $PaymentDetails]);
@@ -461,7 +461,7 @@ echo "Sucess!!";
     	$result = DB::select("select a.*,sum(a.rate_amonut),count(a.participant_id) from speakerRating a group by a.speaker_id");
 
     	return response()->json(['data' => $result]);
- 
+
 
     }
 
