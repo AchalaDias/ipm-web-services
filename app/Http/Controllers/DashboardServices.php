@@ -120,6 +120,9 @@ class DashboardServices extends Controller
         $company_id     = $request->input("company_id");
         $count                                  = (int)$request->input("count");
 
+        $count = $count == 0? 1 : $count;
+
+
         $IndividualAmonut = (float)($amount/$count);
 
 
@@ -243,7 +246,7 @@ class DashboardServices extends Controller
 
             $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
-            return response()->json(['message' => 'success','PDF_file'=> $pdfPath]);
+            return response()->json(['message' => 'success','PDF_file'=>'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$pdfPath]);
 
         }
 
