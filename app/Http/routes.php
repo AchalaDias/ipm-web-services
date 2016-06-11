@@ -29,8 +29,8 @@ Route::get('IndividualsFromCompany','DashboardServices@IndividualsFromCompany');
 Route::get('addSpeakers','DashboardServices@addSpeakers');
 Route::get('UpdateSpeakers','DashboardServices@UpdateSpeakers');
 Route::get('deleteSpeaker','DashboardServices@deleteSpeaker');
-Route::get('showAllSpeakers','DashboardServices@showAllSpeakers');//return all speakers details 
-Route::get('showSpeakerDetailsById','DashboardServices@showSpeakerDetailsById');//return only one speaker's details 
+Route::get('showAllSpeakers','DashboardServices@showAllSpeakers');//return all speakers details
+Route::get('showSpeakerDetailsById','DashboardServices@showSpeakerDetailsById');//return only one speaker's details
 
 
 
@@ -45,3 +45,8 @@ Route::get('ratingAmount','DashboardServices@ratingAmount');
 
 Route::get('userLoginDetails','DashboardServices@userLoginDetails');//user login details
 
+Route::get('deleteUser','LoginController@deleteUser');
+Route::get('getusers','LoginController@users');
+Route::post('login','LoginController@login');
+Route::post('register','LoginController@register');
+Route::post('edit','LoginController@edit');

@@ -685,12 +685,15 @@ from participant a
         foreach($result as $r){
 
             $temp = DB::select(DB::raw("select a.* ,  DATE_FORMAT(a.item_time,'%l:%i %p') as start_time from agenda a where a.speaker_id = '".$r->speaker_id."'"));
+
+
             $rating = DB::select(DB::raw("select count(*) as cnt, IFNULL(sum(a.rate_amount),0) as tot
          from speakerrating a where a.speaker_id  = '".$r->speaker_id."'"));
 
             if($rating[0]->cnt != 0){
                 $avg = $rating[0]->tot / $rating[0]->cnt;
-            }else{
+            }
+            else{
                 $avg = 0;
             }
             $chart = array(); // DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->pluck('rate_amount');
@@ -698,7 +701,7 @@ from participant a
 
                 //$t = DB::table("speakerrating")->where("speaker_id",$r->speaker_id)->where(DB::raw("ROUND(rate_amount) = 3"))->count('rate_amount');
 
-                $t = DB::select(DB::raw("SELECT count(*) as cnt FROM `speakerrating` WHERE round (`rate_amount`) = '".$i."'"));
+                $t = DB::select(DB::raw("SELECT count(*) as cnt FROM `speakerrating` WHERE round (`rate_amount`) = '".$i."' AND speaker_id = '".$r->speaker_id."'"));
 
                 array_push($chart,$t[0]->cnt);
             }
