@@ -8,7 +8,9 @@ use App\Http\Requests;
 use App\QR\BarcodeQR;
 use App\QR\qrlib;
 use App\MailClass\PHPMailer;
+use App\dompdf\autoload;
 use Vsmoraes\Pdf\Pdf;
+use DPDF;
 use Mail;
 
 
@@ -212,8 +214,8 @@ class DashboardServices extends Controller
         $savePATH = 'PATPDF/'.$id.'.pdf';
 
 
-      /* $this->InvoicePDF($filenamePAT,$pname,$id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,1,$Rcount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH);
-*/
+       $this->InvoicePDF($filenamePAT,$pname,$id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,1,$Rcount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH);
+
         }
 
         $res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
@@ -1361,11 +1363,14 @@ from participant a
 
     
        
-      
+      /*
         return $this->pdf
             ->load($html)
             ->filename($savePATH)
-            ->output();
+            ->output();*/
+
+         DPDF::loadHTML($html)->save($savePATH);
+
 
 
 
@@ -1450,14 +1455,22 @@ from participant a
 
                        <br>
                        <br>
+            
+            </body>
+            </html>';
 
 
 
 
 
 
+              $IndividualHtml = 
+        '<html>
+        <head>
+        </head>
+        <body >
 
-
+    
 
                        <table>
                     <tbody>
@@ -1498,17 +1511,22 @@ from participant a
 
 
 
+
           
             $date = date("Y-m-d");
 
-            $filePath = 'AllDetailsPDF/allpaymentsQRCodes-'.$date.'.pdf';
-            
-            $this->pdf
+            $filePathCom = 'AllDetailsPDF/allpaymentsQRCodesCompany-'.$date.'.pdf';
+            $filePathInv = 'AllDetailsPDF/allpaymentsQRCodesIndividual-'.$date.'.pdf';
+
+            DPDF::loadHTML($companyHTML)->save($filePathCom);
+            DPDF::loadHTML($IndividualHtml)->save($filePathInv);
+
+           /* $this->pdf
             ->load($companyHTML)
             ->filename($filePath)
-            ->output();
+            ->output();*/
 
-             return response()->json(['message' => 'success','PDF_file'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePath]);
+             return response()->json(['message' => 'success','PDF_file_com'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathCom, 'PDF_file_inv'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathInv]);
 
 
 
