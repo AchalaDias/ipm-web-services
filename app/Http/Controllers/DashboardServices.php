@@ -12,12 +12,14 @@ use Vsmoraes\Pdf\Pdf;
 use Mail;
 
 
+
+
 class DashboardServices extends Controller
 {
 
 
     private $pdf;
-
+   
     public function __construct(Pdf $pdf)
     {
         $this->pdf = $pdf;
@@ -118,9 +120,9 @@ class DashboardServices extends Controller
         $branch         = $request->input("branch");
         $amount         = (float)$request->input("amount");
         $company_id     = $request->input("company_id");
-        $count                                  = (int)$request->input("count");
+        $count          = (int)$request->input("count");
 
-        $count = $count == 0? 1 : $count;
+        //$count = $count == 0? 1 : $count;
 
 
         $IndividualAmonut = (float)($amount/$count);
@@ -133,22 +135,85 @@ class DashboardServices extends Controller
         $CompanypakageId = $CompanyDetails[0]->company_packagers;
         $researchCount = 0;
         $invoiceTotal = 0;
-        $invoiceResearchAmount = 0;;
+        $invoiceResearchAmount = 0;
         $chargeperHead = 0;
 
 
 
+
+        if($CompanypakageId == 1){
+
+            $invoiceTotal = 16000;
+            $chargeperHead = 16000.00;
+        }
+        if($CompanypakageId == 2){
+
+            $invoiceTotal = 12000;
+            $chargeperHead = 12000.00;
+        }
+        if($CompanypakageId == 3){
+
+            $invoiceTotal = 12000;
+            $chargeperHead = 12000.00;
+        }
+
+
+
+        $company_contact_title = $CompanyDetails[0]->company_contact_title;
+        $company_contact_name = $CompanyDetails[0]->company_contact_name;
+        $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
+        $company_contact_email = $CompanyDetails[0]->company_contact_email;
+        $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+
+
+        
+
         foreach ($Pids as $v) {
 
-            $id = $v->participant_id;
+            $id     = $v->participant_id;
+            $pname  = $v->participant_title.$v->participant_name;
+            $pemail = $v->participant_email;
+            $Rcount = 0;
 
             $res1 = DB::statement(DB::raw("INSERT INTO payments(participant_id,payment_method,payment_role,cheque_no,bank,branch,amount) values('$id','$payment_method','company','$cheque_no','$bank','$branch','$IndividualAmonut')"));
 
             $researchStats = $v->participant_research_status;
             if($researchStats == 1){
-                $researchCount++;
+
+                 $researchCount++;
+                 $invoiceResearchAmount = 3000;
+                 $Rcount = 1;
             }
 
+           
+            $secondTotal = $invoiceTotal+$invoiceResearchAmount;
+            $NBT         = $secondTotal*0.02;
+            $finalAmount = $secondTotal + $NBT;
+
+
+          $PNG_PAT_DIR = "../public/PATQR/";
+          $filenamePAT = $PNG_PAT_DIR.$id.'.png';
+
+
+        $QRtextPAT = "company_id:".$company_id."|participant_id:".$id;
+
+        $qr = new BarcodeQR();
+        $qr->text($QRtextPAT);
+        $qr->draw(100, $filenamePAT);
+
+            Mail::send('invoive',['imgPath'=>$filenamePAT ,'username'=> $pname,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>1,'researchCount'=>$Rcount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead, 'invoiceId'=>$id+100,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone],
+                       function($message) use ($pemail){
+
+                           $message->to($pemail,'IPM')->subject('IPM payment invoice');
+
+            });
+
+
+        $savePATH = 'PATPDF/'.$id.'.pdf';
+
+
+      /* $this->InvoicePDF($filenamePAT,$pname,$id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,1,$Rcount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH);
+*/
         }
 
         $res2 = DB::statement(DB::raw("UPDATE company SET company_paymant_type = '$payment_method',company_paymant_amount = '$amount',company_paymant_status = 1 where company_id = '$company_id'"));
@@ -177,11 +242,7 @@ class DashboardServices extends Controller
 
 
 
-        $company_contact_title = $CompanyDetails[0]->company_contact_title;
-        $company_contact_name = $CompanyDetails[0]->company_contact_name;
-        $company_contact_designation = $CompanyDetails[0]->company_contact_designation;
-        $company_contact_email = $CompanyDetails[0]->company_contact_email;
-        $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
+       
 
 
 
@@ -234,19 +295,22 @@ class DashboardServices extends Controller
             $NBT         = $secondTotal*0.02;
             $finalAmount = $secondTotal + $NBT;
 
-            Mail::queue('invoive',['imgPath'=>'test.png' ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead, 'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone],
+            Mail::queue('invoive',['imgPath'=>$filename ,'username'=> $CompanyDetails[0]->company_name,'firstAmount'=>$invoiceTotal,'secondTotal'=>$secondTotal,'participantCount'=>$count,'researchCount'=>$researchCount,'researchAmount'=> $invoiceResearchAmount,'NBT'=>$NBT,'finalAmount'=>$finalAmount,'UserAmount'=>$amount,'chargeperHead'=>$chargeperHead, 'invoiceId'=>$CompanyDetails[0]->company_id,'company_contact_title'=>$company_contact_title,'company_contact_name'=>$company_contact_name,'company_contact_designation'=>$company_contact_designation,'company_contact_email'=>$company_contact_email,'company_contact_phone'=>$company_contact_phone],
                        function($message) use ($company_email){
 
                            $message->to($company_email,'IPM')->subject('IPM payment invoice');
 
                        });
 
-    $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+
+             $savePATH = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+            $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH);
 
 
-            $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+           /* $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';*/
 
-            return response()->json(['message' => 'success','PDF_file'=>'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$pdfPath]);
+            return response()->json(['message' => 'success','PDF_file'=>'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$savePATH]);
 
         }
 
@@ -375,16 +439,19 @@ class DashboardServices extends Controller
         });
 
 
-        $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone);
+        $savePATH = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
 
-        $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';
+
+        $this->InvoicePDF($filename,$CompanyDetails[0]->company_name,$CompanyDetails[0]->company_id,$invoiceTotal,$amount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH);
+
+       /* $pdfPath = 'PDF/'.$CompanyDetails[0]->company_id.'.pdf';*/
 
 
 
 
         if($res1 == true && $res2 == true){
 
-            return response()->json(['message' => 'success','PDF_file'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$pdfPath]);
+            return response()->json(['message' => 'success','PDF_file'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$savePATH]);
         }
         else{
 
@@ -428,7 +495,7 @@ class DashboardServices extends Controller
 	(select (select  b.packagers_description from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as packagers_description,
 	(select (select  b.description_amount from packagers b where b.packagers_id = c.company_packagers) as abc from company c where c.company_id = a.participant_company ) as amount_disply
 from participant a
- where a.participant_company in (select company_id from company where company_com_indiv = 0 )");
+ where a.participant_company in (select company_id from company where company_com_indiv = 1 )");
 
         $company = $this->CompanyList($request);
 
@@ -1031,7 +1098,7 @@ from participant a
     }
 
 
-    public function InvoicePDF($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone){
+    public function InvoicePDF($filename,$username,$invoiceId,$firstAmount,$UserAmount,$invoiceTotal,$secondTotal,$count,$researchCount,$invoiceResearchAmount,$NBT,$finalAmount,$chargeperHead,$company_contact_title,$company_contact_name,$company_contact_designation,$company_contact_email,$company_contact_phone,$savePATH){
 
         $html = '
     <html>
@@ -1292,15 +1359,166 @@ from participant a
     </html>
     ';
 
-
+    
+       
+      
         return $this->pdf
             ->load($html)
-            ->filename('PDF/'.$invoiceId.'.pdf')
+            ->filename($savePATH)
             ->output();
 
 
 
     }
+
+    public function allPatPDFS(Request $request){
+
+
+
+        $companyPat = DB::select("select * from participant where participant_company in (select company_id from company where company_paymant_status = 1 and company_com_indiv = 0)");
+
+        $individuals = DB::select("select * from participant where participant_company in (select company_id from company where company_paymant_status = 1 and company_com_indiv = 1)");
+
+
+
+
+        $tbodyComPat = "";
+        $tbodyInvPat = "";
+
+        foreach ($companyPat as  $v) {
+
+            $tbodyComPat = $tbodyComPat.'<tr><td style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">'.$v->participant_id.'</td>
+                            <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">'.$v->participant_title.$v->participant_name.'</td>
+                            <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;"><img src="PATQR/'.$v->participant_id.'.png"></td></tr>';
+
+                          
+            
+        }
+
+
+          foreach ($individuals as  $v) {
+
+            $tbodyInvPat = $tbodyInvPat.'<tr><td style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">'.$v->participant_id.'</td>
+                            <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">'.$v->participant_title.$v->participant_name.'</td>
+                            <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;"><img src="PATQR/'.$v->participant_id.'.png"></td></tr>';
+
+                          
+            
+        }
+
+
+
+        $companyHTML = 
+        '<html>
+        <head>
+        </head>
+        <body >
+
+                <table>
+                    <tbody>
+                     <tr>
+                               <td style="color:#333333;font-weight: 400;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;">
+                                   <h2>Company payments(member codes) QR codes</h2>
+                               </td>
+                             </tr>
+                             <tr>
+                             </tr>
+                    </tbody>
+                </table>
+                <br>
+                <table>  
+                        <tbody>
+
+                            
+
+                          
+                             <tr>
+                              <th style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">ID</th>
+                              <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Details</th>
+                              <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Code</th>
+                             </tr>
+
+
+                           
+                            '.$tbodyComPat.'
+                           
+
+                        </tbody>
+
+
+                       </table>
+
+                       <br>
+                       <br>
+
+
+
+
+
+
+
+
+
+                       <table>
+                    <tbody>
+                     <tr>
+                               <td style="color:#333333;font-weight: 400;font-size: 14px;font-family:  Arial, Helvetica, sans-serif;">
+                                   <h2>Individual payments QR codes</h2>
+                               </td>
+                             </tr>
+                             <tr>
+                             </tr>
+                    </tbody>
+                </table>
+                <br>
+                <table>  
+                        <tbody>
+
+                            
+
+                          
+                             <tr>
+                              <th style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">ID</th>
+                              <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Details</th>
+                              <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Code</th>
+                             </tr>
+
+
+                           
+                            '.$tbodyInvPat.'
+                           
+
+                        </tbody>
+
+
+                       </table>
+            </body>
+            </html>';
+
+
+
+
+          
+            $date = date("Y-m-d");
+
+            $filePath = 'AllDetailsPDF/allpaymentsQRCodes-'.$date.'.pdf';
+            
+            $this->pdf
+            ->load($companyHTML)
+            ->filename($filePath)
+            ->output();
+
+             return response()->json(['message' => 'success','PDF_file'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePath]);
+
+
+
+
+
+
+
+
+    }
+
 
 
 

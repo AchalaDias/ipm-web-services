@@ -50,3 +50,6 @@ Route::get('getusers','LoginController@users');
 Route::post('login','LoginController@login');
 Route::post('register','LoginController@register');
 Route::post('edit','LoginController@edit');
+
+
+Route::get('allPatPDFS','DashboardServices@allPatPDFS');
