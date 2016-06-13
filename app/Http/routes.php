@@ -53,3 +53,5 @@ Route::post('edit','LoginController@edit');
 
 
 Route::get('allPatPDFS','DashboardServices@allPatPDFS');
+
+Route::get('allspeakerRatings','DashboardServices@allspeakerRatings');

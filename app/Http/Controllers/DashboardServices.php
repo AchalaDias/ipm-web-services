@@ -21,7 +21,7 @@ class DashboardServices extends Controller
 
 
     private $pdf;
-   
+
     public function __construct(Pdf $pdf)
     {
         $this->pdf = $pdf;
@@ -168,7 +168,7 @@ class DashboardServices extends Controller
         $company_contact_phone = $CompanyDetails[0]->company_contact_phone;
 
 
-        
+
 
         foreach ($Pids as $v) {
 
@@ -187,7 +187,7 @@ class DashboardServices extends Controller
                  $Rcount = 1;
             }
 
-           
+
             $secondTotal = $invoiceTotal+$invoiceResearchAmount;
             $NBT         = $secondTotal*0.02;
             $finalAmount = $secondTotal + $NBT;
@@ -244,7 +244,7 @@ class DashboardServices extends Controller
 
 
 
-       
+
 
 
 
@@ -1361,8 +1361,8 @@ from participant a
     </html>
     ';
 
-    
-       
+
+
       /*
         return $this->pdf
             ->load($html)
@@ -1396,8 +1396,8 @@ from participant a
                             <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">'.$v->participant_title.$v->participant_name.'</td>
                             <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;"><img src="PATQR/'.$v->participant_id.'.png"></td></tr>';
 
-                          
-            
+
+
         }
 
 
@@ -1407,13 +1407,13 @@ from participant a
                             <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">'.$v->participant_title.$v->participant_name.'</td>
                             <td style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;"><img src="PATQR/'.$v->participant_id.'.png"></td></tr>';
 
-                          
-            
+
+
         }
 
 
 
-        $companyHTML = 
+        $companyHTML =
         '<html>
         <head>
         </head>
@@ -1431,12 +1431,12 @@ from participant a
                     </tbody>
                 </table>
                 <br>
-                <table>  
+                <table>
                         <tbody>
 
-                            
 
-                          
+
+
                              <tr>
                               <th style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">ID</th>
                               <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Details</th>
@@ -1444,9 +1444,9 @@ from participant a
                              </tr>
 
 
-                           
+
                             '.$tbodyComPat.'
-                           
+
 
                         </tbody>
 
@@ -1455,7 +1455,7 @@ from participant a
 
                        <br>
                        <br>
-            
+
             </body>
             </html>';
 
@@ -1464,13 +1464,13 @@ from participant a
 
 
 
-              $IndividualHtml = 
+              $IndividualHtml =
         '<html>
         <head>
         </head>
         <body >
 
-    
+
 
                        <table>
                     <tbody>
@@ -1484,12 +1484,12 @@ from participant a
                     </tbody>
                 </table>
                 <br>
-                <table>  
+                <table>
                         <tbody>
 
-                            
 
-                          
+
+
                              <tr>
                               <th style="width: 100px; border: 1px solid #d5d5d5; text-align: center;">ID</th>
                               <th style="width: 250px; padding: 10px 0 10px 20px; border: 1px solid #d5d5d5; text-align: left;">Details</th>
@@ -1497,9 +1497,9 @@ from participant a
                              </tr>
 
 
-                           
+
                             '.$tbodyInvPat.'
-                           
+
 
                         </tbody>
 
@@ -1512,7 +1512,7 @@ from participant a
 
 
 
-          
+
             $date = date("Y-m-d");
 
             $filePathCom = 'AllDetailsPDF/allpaymentsQRCodesCompany-'.$date.'.pdf';
@@ -1521,14 +1521,13 @@ from participant a
             DPDF::loadHTML($companyHTML)->save($filePathCom);
             DPDF::loadHTML($IndividualHtml)->save($filePathInv);
 
-           /* $this->pdf
-            ->load($companyHTML)
-            ->filename($filePath)
-            ->output();*/
+              $this->pdf
+            ->load($IndividualHtml)
+            ->show();
 
-             return response()->json(['message' => 'success','PDF_file_com'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathCom, 'PDF_file_inv'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathInv]);
+            /* return response()->json(['message' => 'success','PDF_file_com'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathCom, 'PDF_file_inv'=> 'http://'. $request->server ("HTTP_HOST").'/ipm-web-services/public/'.$filePathInv]);
 
-
+*/
 
 
 
@@ -1538,7 +1537,14 @@ from participant a
     }
 
 
+public function allspeakerRatings(){
 
+$rates = DB::select(DB::raw("   select a.*,(select IFNULL(avg(b.rate_amount),0) from speakerrating b where b.speaker_id = a.speaker_id) as rating
+         from speakers a"));
+
+         return $rates;
+
+}
 
 
 
